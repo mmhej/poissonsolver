@@ -4,7 +4,7 @@ document.write('\
 		<div style="float: left">\
 			<table align="center">\
 				<tr>\
-					<td style="color: #333333;">\
+					<td style="color: #aca793;">\
 <h1>GREENFISH</h1>\
 					</td>\
 				</tr>\
