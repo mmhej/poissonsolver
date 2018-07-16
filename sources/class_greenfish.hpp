@@ -69,6 +69,9 @@ class class_greenfish
 		std::complex<double> * mapG = NULL;
 		std::complex<double> * rhsG = NULL;
 
+		std::complex<double> * ikX = NULL;
+		std::complex<double> * ikY = NULL;
+
 //----------------------------------------------------------------------------//
 // Prototype private routines
 //----------------------------------------------------------------------------//
@@ -80,6 +83,13 @@ class class_greenfish
 // Public variables
 //----------------------------------------------------------------------------//
 		class_partition partition;
+
+// Options
+		bool rhs_grad      = false;
+		bool rhs_div       = false;
+		bool rhs_curl      = false;
+		bool rhs_reproject = false;
+		int regularisation = 0;
 
 //----------------------------------------------------------------------------//
 // Prototype public routines

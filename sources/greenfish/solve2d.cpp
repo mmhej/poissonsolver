@@ -12,6 +12,7 @@ void class_greenfish::solve2d(  )
 // Parameters
 //----------------------------------------------------------------------------//
 	const double pi = acos(-1.0);
+	const std::complex<double> im = {0.0,1.0};
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -47,11 +48,74 @@ void class_greenfish::solve2d(  )
 
 //----------------------------------------------------------------------------//
 // Find out which fields to map
-// TO DO: include rhs operator (e.g. curl)
 //----------------------------------------------------------------------------//
-	if( rhsX != NULL ){ rX = true; lX = true; }
-	if( rhsY != NULL ){ rY = true; lY = true; }
-	if( rhsZ != NULL ){ rZ = true; lZ = true; }
+	if( rhsX != NULL ){ rX = true; }
+	if( rhsY != NULL ){ rY = true; }
+	if( rhsZ != NULL ){ rZ = true; }
+
+	if(rhs_grad)
+	{
+std::cout << "Solving grad" << std::endl;
+		if(rX)
+		{
+			lX = true;
+			lY = true;
+		}
+		else
+		{
+			std::cerr << " [greenfish.solve2d]: "
+			          << "Error rhs fields have not been pushed correctly for grad option" 
+			          << std::endl;
+			return;
+		}
+	}
+	if(rhs_div)
+	{
+std::cout << "Solving div" << std::endl;
+		if(rX && rY)
+		{
+			lX = true;
+		}
+		else
+		{
+			std::cerr << " [greenfish.solve2d]: "
+			          << "Error rhs fields have not been pushed correctly for div option" 
+			          << std::endl;
+			return;
+		}
+	}
+	else if(rhs_curl)
+	{
+std::cout << "Solving curl" << std::endl;
+		if(rZ)
+		{
+			lX = true;
+			lY = true;
+		}
+		else
+		{
+			std::cerr << " [greenfish.solve2d]: "
+			          << "Error rhs fields have not been pushed correctly for curl option" 
+			          << std::endl;
+			return;
+		}
+	}
+	else
+	{
+std::cout << "Solving regular" << std::endl;
+		if(rX)
+		{
+			lX = true;
+		}
+		if(rY)
+		{
+			lY = true;
+		}
+		if(rZ)
+		{
+			lZ = true;
+		}
+	}
 
 //----------------------------------------------------------------------------//
 // Construct pencils
@@ -176,9 +240,9 @@ void class_greenfish::solve2d(  )
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 //	dk = 1.0/double(ncell[1]);
 //	kY = new double[ncell[1]];
-
+/*
 	dk = 1.0/double(nfft);
-	kY = new double[nfft];
+	kY = new double[nfft]();
 
 //	for (j = 0; j < ncell[1]; ++j )
 	for (j = 0; j < nfft; ++j )
@@ -193,7 +257,7 @@ void class_greenfish::solve2d(  )
 			kY[j] = double(j) * dk - 1.0;
 		}
 	}
-
+*/
 
 	for (i = 0; i < ncell[0]; ++i )
 	{
@@ -253,19 +317,35 @@ void class_greenfish::solve2d(  )
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Do convolution
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-			if( lX && rX )
+			if(rhs_grad)
 			{
-				pen_lhs.X[j] = rhsG[ij] * pen_rhs.X[j];
+				pen_lhs.X[j] = - ikX[i] * rhsG[ij] * pen_rhs.X[j];
+				pen_lhs.Y[j] = - ikY[j] * rhsG[ij] * pen_rhs.X[j];
 			}
-
-			if( lY && rX )
+			if(rhs_div)
 			{
-				pen_lhs.Y[j] = rhsG[ij] * pen_rhs.Y[j];
+				pen_lhs.X[j] = - ikX[i] * rhsG[ij] * pen_rhs.X[j];
+				               - ikY[j] * rhsG[ij] * pen_rhs.Y[j];
 			}
-
-			if( lZ && rX )
+			else if(rhs_curl)
 			{
-				pen_lhs.Z[j] = rhsG[ij] * pen_rhs.Z[j];
+				pen_lhs.X[j] =   ikY[j] * rhsG[ij] * pen_rhs.Z[j];
+				pen_lhs.Y[j] = - ikX[i] * rhsG[ij] * pen_rhs.Z[j];
+			}
+			else
+			{
+				if( lX )
+				{
+					pen_lhs.X[j] = rhsG[ij] * pen_rhs.X[j];
+				}
+				if( lY )
+				{
+					pen_lhs.Y[j] = rhsG[ij] * pen_rhs.Y[j];
+				}
+				if( lZ )
+				{
+					pen_lhs.Z[j] = rhsG[ij] * pen_rhs.Z[j];
+				}
 			}
 
 		}

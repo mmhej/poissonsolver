@@ -229,8 +229,6 @@ double bessel_int_J0( double x )
 }
 
 
-
-
 //----------------------------------------------------------------------------//
 // Sine integral function
 // This function is taken from: 
@@ -246,9 +244,9 @@ double sine_int( double x)
 	const double gamma = 0.5772156649015329;
 
 	int maxit = 1000;
-	double eps = 1.0E-10;
-	double fpmin = 1.0E-30;
-	double fpmax = 1.0E30;
+	double eps = 1.0e-10;
+	double fpmin = 1.0e-30;
+	double fpmax = 1.0e30;
 	double tmin = 2.0;
 
 	int i,k;
@@ -273,7 +271,10 @@ double sine_int( double x)
 		c = fpmax;
 		d = 1.0/b;
 		h = d;
-		for( i = 2; i <= maxit; ++i )
+
+		i = 2;
+		err = 1.0;
+		while( i < maxit && err > eps )
 		{
 			a = -pow( i-1 ,2);
 			b = b + 2.0;
@@ -282,10 +283,12 @@ double sine_int( double x)
 			del = c*d;
 			h = h*del;
 
-			if( std::abs( std::real( del-1.0 ) ) + std::abs( std::imag( del-1.0 ) ) <= eps ){ return ans; }
+			err = std::abs( std::real( del-1.0 ) ) + std::abs( std::imag( del-1.0 ) );
+			++i;
+
 		}
 
-		if(i >= maxit){ std::cerr << "Continued fraction failed in cisi" << std::endl; }
+		if(i >= maxit){ std::cerr << "Continued fraction failed" << std::endl; }
 
 		g = {cos(t),-sin(t)};
 		h = g * h;
@@ -310,7 +313,10 @@ double sine_int( double x)
 			sign = 1.0;
 			fact = 1.0;
 			odd  = true;
-			for( k = 1; k <= maxit; ++k )
+
+			k = 1;
+			err = 1.0;
+			while( k <= maxit && err > eps )
 			{
 				fact = fact*t/k;
 				term = fact/k;
@@ -328,13 +334,10 @@ double sine_int( double x)
 					sum  = sums;
 				}
 
-				if(err < eps){ return ans; }
-
 				odd = !odd;
-
+				++k;
 			}
-
-			if(k >= maxit){ std::cerr << "MAXIT exceeded in cisi" << std::endl; }
+			if(k >= maxit){ std::cerr << "MAXIT exceeded" << std::endl; }
 		}
 
 		ans = sums;
@@ -347,11 +350,6 @@ double sine_int( double x)
 //----------------------------------------------------------------------------//
 	return ans;
 }
-
-
-
-
-
 
 
 

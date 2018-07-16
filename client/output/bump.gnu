@@ -2,9 +2,10 @@
 reset
 set palette defined (-1 "dark-blue", 0 "white", 1 "dark-red")
 
-#set cbrange [ -4.0*10.0*exp(-10.0) : 4.0*10.0*exp(-10.0) ] 
-set cbrange [ -exp(-10.0) : exp(-10.0) ] 
-#set cbrange [ -0.3*c*exp(-10.0) : 0.3*c*exp(-10.0) ]
+c = 10.0
+#set cbrange [ -4.0*c*exp(-c) : 4.0*c*exp(-c) ] 
+#set cbrange [ -exp(-c) : exp(-c) ] 
+set cbrange [ -0.3*c*exp(-c) : 0.3*c*exp(-c) ]
 
 set notics
 unset border

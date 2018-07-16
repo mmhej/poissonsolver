@@ -48,9 +48,9 @@ void class_greenfish::greens2d(  )
 	MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-//----------------------------------------------------------------------------//
+//============================================================================//
 // Create extended partitions and communications
-//----------------------------------------------------------------------------//
+//============================================================================//
 	class_communication comm;
 	std::vector<class_partition_info> xpen;
 	std::vector<class_partition_info> ypen;
@@ -69,6 +69,50 @@ void class_greenfish::greens2d(  )
 
 	comm.setup2d( xpen, ypen );
 
+
+//============================================================================//
+// Create spectral derivative operator on y-pencil partition
+//============================================================================//
+	ncell[0] = ypen[rank].ncell[0];
+	ncell[1] = ypen[rank].ncell[1];
+
+	icell[0] = ypen[rank].icell[0];
+	icell[1] = ypen[rank].icell[1];
+
+	dk = 1.0/double( xpen[rank].ncell[0] );
+	ikX = new std::complex<double>[ncell[0]]();
+
+	for (i = 0; i < ncell[0]; ++i )
+	{
+		if( 2*i < ncell[0] )
+		{
+			ikX[i] = {0.0, 2.0 * pi * double(icell[0]+i) * dk};
+		}
+		else
+		{
+			ikX[i] = {0.0, 2.0 * pi * double(icell[0]+i) * dk - 1.0};
+		}
+	}
+
+	dk = 1.0/double(ncell[1]);
+	ikY = new std::complex<double>[ncell[1]]();
+
+	for (j = 0; j < ncell[1]; ++j )
+	{
+		if( 2*j < ncell[1] )
+		{
+			ikY[j] = {0.0, 2.0 * pi * double(j) * dk};
+		}
+		else
+		{
+			ikY[j] = {0.0, 2.0 * pi * double(j) * dk - 1.0};
+		}
+	}
+
+
+//============================================================================//
+// Create Greens functions
+//============================================================================//
 	if(domain_bc[0] == 0 && domain_bc[1] == 0)
 	{
 //----------------------------------------------------------------------------//
@@ -206,36 +250,6 @@ void class_greenfish::greens2d(  )
 
 		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
 
-		dk = 1.0/double( xpen[rank].ncell[0] );
-		kX = new double[ncell[0]]();
-
-		for (i = 0; i < ncell[0]; ++i )
-		{
-			if( 2*i < ncell[0] )
-			{
-				kX[i] = double(icell[0]+i) * dk;
-			}
-			else
-			{
-				kX[i] = double(icell[0]+i) * dk - 1.0;
-			}
-		}
-
-		dk = 1.0/double(ncell[1]);
-		kY = new double[ncell[1]];
-
-		for (j = 0; j < ncell[1]; ++j )
-		{
-			if( 2*j < ncell[1] )
-			{
-				kY[j] = double(j) * dk;
-			}
-			else
-			{
-				kY[j] = double(j) * dk - 1.0;
-			}
-		}
-
 		for (i = 0; i < ncell[0]; ++i )
 		{
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
@@ -247,9 +261,7 @@ void class_greenfish::greens2d(  )
 
 				if( j > 0 || i > 0 || icell[0] > 0 )
 				{
-					kx2 = kX[i] * kX[i];
-					ky2 = kY[j] * kY[j];
-					rhsG[ij] = {dx[0]*dx[1]/(4.0*pi*pi*( kx2 + ky2 ) ),0.0};
+					rhsG[ij] = -dx[0]*dx[1]/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
 				else
 				{
