@@ -79,22 +79,24 @@ void class_greenfish::greens2d(  )
 	icell[0] = ypen[rank].icell[0];
 	icell[1] = ypen[rank].icell[1];
 
-	dk = 1.0/double( xpen[rank].ncell[0] );
+	nfft = xpen[rank].ncell[0];
+
+	dk = 1.0/( double( nfft ) * dx[0] );
 	ikX = new std::complex<double>[ncell[0]]();
 
 	for (i = 0; i < ncell[0]; ++i )
 	{
-		if( 2*i < ncell[0] )
+		if( 2*(icell[0]+i) < nfft )
 		{
 			ikX[i] = {0.0, 2.0 * pi * double(icell[0]+i) * dk};
 		}
 		else
 		{
-			ikX[i] = {0.0, 2.0 * pi * double(icell[0]+i) * dk - 1.0};
+			ikX[i] = {0.0, 2.0 * pi * double(icell[0]+i-nfft) * dk };
 		}
 	}
 
-	dk = 1.0/double(ncell[1]);
+	dk = 1.0/( double(ncell[1]) * dx[1] );
 	ikY = new std::complex<double>[ncell[1]]();
 
 	for (j = 0; j < ncell[1]; ++j )
@@ -105,7 +107,7 @@ void class_greenfish::greens2d(  )
 		}
 		else
 		{
-			ikY[j] = {0.0, 2.0 * pi * double(j) * dk - 1.0};
+			ikY[j] = {0.0, 2.0 * pi * double(j-ncell[1]) * dk};
 		}
 	}
 
@@ -261,7 +263,7 @@ void class_greenfish::greens2d(  )
 
 				if( j > 0 || i > 0 || icell[0] > 0 )
 				{
-					rhsG[ij] = -dx[0]*dx[1]/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
 				else
 				{

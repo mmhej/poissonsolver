@@ -12,7 +12,6 @@ void class_greenfish::solve2d(  )
 // Parameters
 //----------------------------------------------------------------------------//
 	const double pi = acos(-1.0);
-	const std::complex<double> im = {0.0,1.0};
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -55,7 +54,6 @@ void class_greenfish::solve2d(  )
 
 	if(rhs_grad)
 	{
-std::cout << "Solving grad" << std::endl;
 		if(rX)
 		{
 			lX = true;
@@ -71,7 +69,6 @@ std::cout << "Solving grad" << std::endl;
 	}
 	if(rhs_div)
 	{
-std::cout << "Solving div" << std::endl;
 		if(rX && rY)
 		{
 			lX = true;
@@ -86,7 +83,6 @@ std::cout << "Solving div" << std::endl;
 	}
 	else if(rhs_curl)
 	{
-std::cout << "Solving curl" << std::endl;
 		if(rZ)
 		{
 			lX = true;
@@ -102,7 +98,6 @@ std::cout << "Solving curl" << std::endl;
 	}
 	else
 	{
-std::cout << "Solving regular" << std::endl;
 		if(rX)
 		{
 			lX = true;
@@ -173,26 +168,6 @@ std::cout << "Solving regular" << std::endl;
 
 	}
 
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Calculate wavenumbers in x-dir and store in global array
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-	dk = 1.0/double(ncell[0]);
-	kX = new double[ncell[0]]();
-
-	for (i = 0; i < ncell[0]; ++i )
-	{
-
-		if( 2*i < ncell[0] )
-		{
-			kX[i] = double(i) * dk;
-		}
-		else
-		{
-			kX[i] = double(i) * dk - 1.0;
-		}
-//		if(rank == 0){ std::cout << kX[i] << std::endl; }
-	}
-
 //----------------------------------------------------------------------------//
 // Map to y-pencils
 //----------------------------------------------------------------------------//
@@ -235,29 +210,6 @@ std::cout << "Solving regular" << std::endl;
 		lhsZ = new std::complex<double>[ncell[0]*ncell[1]]();
 	}
 
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Calculate wavenumbers in y-dir and store in global array
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-//	dk = 1.0/double(ncell[1]);
-//	kY = new double[ncell[1]];
-/*
-	dk = 1.0/double(nfft);
-	kY = new double[nfft]();
-
-//	for (j = 0; j < ncell[1]; ++j )
-	for (j = 0; j < nfft; ++j )
-	{
-//		if( 2*j < ncell[1] )
-		if( 2*j < nfft )
-		{
-			kY[j] = double(j) * dk;
-		}
-		else
-		{
-			kY[j] = double(j) * dk - 1.0;
-		}
-	}
-*/
 
 	for (i = 0; i < ncell[0]; ++i )
 	{
@@ -319,13 +271,13 @@ std::cout << "Solving regular" << std::endl;
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 			if(rhs_grad)
 			{
-				pen_lhs.X[j] = - ikX[i] * rhsG[ij] * pen_rhs.X[j];
-				pen_lhs.Y[j] = - ikY[j] * rhsG[ij] * pen_rhs.X[j];
+				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
+				pen_lhs.Y[j] = ikY[j] * rhsG[ij] * pen_rhs.X[j];
 			}
 			if(rhs_div)
 			{
-				pen_lhs.X[j] = - ikX[i] * rhsG[ij] * pen_rhs.X[j];
-				               - ikY[j] * rhsG[ij] * pen_rhs.Y[j];
+				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
+				             + ikY[j] * rhsG[ij] * pen_rhs.Y[j];
 			}
 			else if(rhs_curl)
 			{
