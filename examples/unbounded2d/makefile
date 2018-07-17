@@ -6,7 +6,7 @@ PROGRAM  := unbounded2d
 MAINFILE := ./main.cpp
 
 SRC_DIR  := ./sources
-OBJ_DIR  := ./objects
+OBJ_DIR  := ./build
 
 default: $(PROGRAM)
 
@@ -38,7 +38,7 @@ INCLDIRS = -I$(GREENLIB)/include -I$(OPENMPI)/include
 CPP = cpp
 
 # Preprocessor compiler flags
-CPPFLAGS = --std=c++11 -O3 #-D__verb
+CPPFLAGS = --std=c++11 -O3 -D__verb
 
 #------------------------------------------------------------------------------#
 # write scripts

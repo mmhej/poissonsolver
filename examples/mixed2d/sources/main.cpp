@@ -34,13 +34,16 @@ int main(int argc, char* argv[])
 	const double c = 10.0;
 	const double r0 = 1.0;
 
-	const double domain_xmin[2]   = {-1.0, -1.0};
-	const double domain_xmax[2]   = { 1.0,  1.0};
+	const double domain_xmin[2]   = {-1.0, -2.0};
+	const double domain_xmax[2]   = { 1.0,  2.0};
 
 	int domain_bounds[2] = {1,0};
 
 //	int domain_ncell[2]  = { 64, 64};
-	int domain_ncell[2]  = { 128, 128};
+//	int domain_ncell[2]  = { 128, 128};
+
+	int domain_ncell[2]  = { 128, 256};
+
 //	int domain_ncell[2]  = { 256, 256};
 //	int domain_ncell[2]  = { 512, 512};
 //	int domain_ncell[2]  = { 1024, 1024};
@@ -64,8 +67,8 @@ int main(int argc, char* argv[])
 
 	double * A;
 	double * B;
-	double * vX;
-	double * vY;
+	double * dAdX;
+	double * dAdY;
 
 	double diffX, diffY;
 
@@ -113,7 +116,7 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_curl = true; // specify lhs operator
+	green.lhs_grad = true; // specify lhs operator
 	green.setup2d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -128,10 +131,10 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Allocate fields
 //----------------------------------------------------------------------------//
-	A  = new double[ncell[0] * ncell[1]]();
-	B  = new double[ncell[0] * ncell[1]]();
-	vX = new double[ncell[0] * ncell[1]]();
-	vY = new double[ncell[0] * ncell[1]]();
+	A    = new double[ncell[0] * ncell[1]]();
+	B    = new double[ncell[0] * ncell[1]]();
+	dAdX = new double[ncell[0] * ncell[1]]();
+	dAdY = new double[ncell[0] * ncell[1]]();
 
 //----------------------------------------------------------------------------//
 // Initiate fields
@@ -144,8 +147,14 @@ int main(int argc, char* argv[])
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
 			ij = j * ncell[0] + i;
 
+
+
 			if(std::abs(y) < r0)
 			{
+
+				B[ij] = pow(1.0 - y*y, 5);
+
+/*
 				B[ij] = ( exp( c * pow(y,2) / ( (y - 1.0)*(y + 1.0) ) )
 				      * sin( pi * x ) 
 				      * ( 1.0 * pow(pi,2) * pow(y,8) 
@@ -158,11 +167,13 @@ int main(int argc, char* argv[])
 				        + 1.0 * pow(pi,2) 
 				        + 2.0 * c ) 
 				        )/( pow(y - 1.0,4) * pow(y + 1.0,4) );
+*/
 			}
 			else
 			{
 				B[ij] = 0.0;
 			}
+
 
 		}
 	}
@@ -179,7 +190,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push2d( NULL, NULL, B, NULL, NULL, NULL);
+	green.push2d( B, NULL, NULL, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -201,10 +212,12 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	A  = new double[ncell[0] * ncell[1]]();
-	vX = new double[ncell[0] * ncell[1]]();
-	vY = new double[ncell[0] * ncell[1]]();
-	green.pull2d( NULL, NULL, B, vX, vY, A );
+	A    = new double[ncell[0] * ncell[1]]();
+	dAdX = new double[ncell[0] * ncell[1]]();
+	dAdY = new double[ncell[0] * ncell[1]]();
+
+//	green.pull2d( B, NULL, NULL, A, NULL, NULL );
+	green.pull2d( B, NULL, NULL, dAdX, dAdY, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error
@@ -224,16 +237,27 @@ int main(int argc, char* argv[])
 
 			if(std::abs(y) < r0)
 			{
+
+// dAdY
+				err += dx[0]*dx[1]* pow( dAdY[ij] - ( 1.0/11.0*pow(y,11) - 5.0/9.0*pow(y,9) + 10.0/7.0*pow(y,7) - 2.0*pow(y,5) + 5.0/3.0*pow(y,3) - y ) , 2);
+				nrm += dx[0]*dx[1]* pow( 1.0/11.0*pow(y,11) - 5.0/9.0*pow(y,9) + 10.0/7.0*pow(y,7) - 2.0*pow(y,5) + 5.0/3.0*pow(y,3) - y, 2);
+
+
+
+
 // A
 
 // B
 
-// vector
-				err += dx[0]*dx[1]* pow( vX[ij] - (- 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ) ) , 2);
-				nrm += dx[0]*dx[1]* pow( - 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ), 2);
+/*
+// dAdX
+				err += dx[0]*dx[1]* pow( dAdX[ij] - ( pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x ) ), 2);
+				nrm += dx[0]*dx[1]* pow( pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) )*cos( pi*x ), 2);
 
-				err += dx[0]*dx[1]* pow( vY[ij] - ( - pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x ) ), 2);
-				nrm += dx[0]*dx[1]* pow( - pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) )*cos( pi*x ), 2);
+// dAdY
+				err += dx[0]*dx[1]* pow( dAdY[ij] - (- 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ) ) , 2);
+				nrm += dx[0]*dx[1]* pow( - 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ), 2);
+*/
 
 			}
 			else
@@ -241,9 +265,22 @@ int main(int argc, char* argv[])
 
 //				err += dx[0]*dx[1]* pow( A[ij], 2);
 //				err += dx[0]*dx[1]* pow( B[ij], 2);
-				err += dx[0]*dx[1]* pow( vX[ij] , 2);
-				err += dx[0]*dx[1]* pow( vY[ij] , 2);
+//				err += dx[0]*dx[1]* pow( dAdX[ij] , 2);
+//				err += dx[0]*dx[1]* pow( dAdY[ij] , 2);
+
+				if( y > 0.0)
+				{
+					err += dx[0]*dx[1]* pow( dAdY[ij] - ( - 256.0/693.0 ) , 2);
+					nrm += dx[0]*dx[1]* pow( 256.0/693.0 , 2);
+				}
+				else if( y < 0.0)
+				{
+					err += dx[0]*dx[1]* pow( dAdY[ij] - ( 256.0/693.0 ) , 2);
+					nrm += dx[0]*dx[1]* pow( 256.0/693.0 , 2);
+				}
 			}
+
+
 
 
 		}
@@ -292,27 +329,44 @@ int main(int argc, char* argv[])
 
 			if(std::abs(y) < r0)
 			{
+				err = dAdY[ij] - ( 1.0/11.0*pow(y,11) - 5.0/9.0*pow(y,9) + 10.0/7.0*pow(y,7) - 2.0*pow(y,5) + 5.0/3.0*pow(y,3) - y );
+
+
+
 // A
 
 // B
 
-// v
-				diffX = vX[ij] - (- 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ) );
+// dAdX
+//				diffY = dAdX[ij] - ( pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x ) );
 
-				diffY = vY[ij] - ( - pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x ) );
+// dAdY
+//				diffX = dAdY[ij] - (- 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ) );
+
 
 			}
 			else
 			{
 //				err = A[ij];
 //				err = B[ij];
-				diffX = vX[ij];
-				diffY = vY[ij];
+//				diffX = dAdX[ij];
+//				diffY = dAdY[ij];
+
+				if( y > 0.0)
+				{
+					err = dAdY[ij] - ( - 256.0/693.0 );
+				}
+				else if( y < 0.0)
+				{
+					err = dAdY[ij] - ( 256.0/693.0 );
+				}
+
+
 			}
 
-//			err = A[ij];
+//			err = dAdY[ij] - ( 1.0/11.0*pow(y,11) - 5.0/9.0*pow(y,9) + 10.0/7.0*pow(y,7) - 2.0*pow(y,5) + 5.0/3.0*pow(y,3) - y );
 
-			err = sqrt( pow(diffX,2) + pow(diffY,2) );
+//			err = sqrt( pow(diffX,2) + pow(diffY,2) );
 
 			outfile << std::scientific << std::setw(17) << x << std::setw(17) << y << std::setw(17) << err << "\n";
 

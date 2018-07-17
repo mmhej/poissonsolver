@@ -64,8 +64,8 @@ int main(int argc, char* argv[])
 
 	double * A;
 	double * B;
-	double * vX;
-	double * vY;
+	double * dAdX;
+	double * dAdY;
 
 	double diffX, diffY;
 
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_curl = true; // specify lhs operator
+	green.lhs_grad = true; // specify lhs operator
 	green.setup2d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -128,10 +128,10 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Allocate fields
 //----------------------------------------------------------------------------//
-	A  = new double[ncell[0] * ncell[1]]();
-	B  = new double[ncell[0] * ncell[1]]();
-	vX = new double[ncell[0] * ncell[1]]();
-	vY = new double[ncell[0] * ncell[1]]();
+	A    = new double[ncell[0] * ncell[1]]();
+	B    = new double[ncell[0] * ncell[1]]();
+	dAdX = new double[ncell[0] * ncell[1]]();
+	dAdY = new double[ncell[0] * ncell[1]]();
 
 //----------------------------------------------------------------------------//
 // Initiate fields
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push2d( NULL, NULL, B, NULL, NULL, NULL);
+	green.push2d( B, NULL, NULL, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -190,7 +190,8 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.pull2d( NULL, NULL, B, vX, vY, A );
+//	green.pull2d( B, NULL, NULL, A, NULL, NULL );
+	green.pull2d( B, NULL, NULL, dAdX, dAdY, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error integral
@@ -219,12 +220,13 @@ int main(int argc, char* argv[])
 //				err += dx[0]*dx[1]* pow( bump[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4)) ,2);
 //				nrm += dx[0]*dx[1]* pow( 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4) ,2);
 
-// vector
-				err += dx[0]*dx[1]* pow( vX[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
+// dAdX
+				err += dx[0]*dx[1]* pow( dAdX[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
 				nrm += dx[0]*dx[1]* pow( - 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
 
-				err += dx[0]*dx[1]* pow( vY[ij] - ( 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
-				nrm += dx[0]*dx[1]* pow( 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
+// dAdY
+				err += dx[0]*dx[1]* pow( dAdY[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
+				nrm += dx[0]*dx[1]* pow( - 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
 
 			}
 			else
@@ -232,8 +234,8 @@ int main(int argc, char* argv[])
 
 //				err += dx[0]*dx[1]* pow( A[ij], 2);
 //				err += dx[0]*dx[1]* pow( B[ij], 2);
-				err += dx[0]*dx[1]* pow( vX[ij] , 2);
-				err += dx[0]*dx[1]* pow( vY[ij] , 2);
+				err += dx[0]*dx[1]* pow( dAdX[ij] , 2);
+				err += dx[0]*dx[1]* pow( dAdY[ij] , 2);
 			}
 
 
@@ -287,17 +289,19 @@ int main(int argc, char* argv[])
 // B
 //				err = B[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4));
 
-// v
-				diffX = vX[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
-				diffY = vY[ij] - ( 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
+// dAdX
+				diffX = dAdX[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
+
+// dAdY
+				diffY = dAdY[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
 
 			}
 			else
 			{
 //				err = A[ij];
 //				err = B[ij];
-				diffX = vX[ij];
-				diffY = vY[ij];
+				diffX = dAdX[ij];
+				diffY = dAdY[ij];
 			}
 
 			err = sqrt( pow(diffX,2) + pow(diffY,2) );

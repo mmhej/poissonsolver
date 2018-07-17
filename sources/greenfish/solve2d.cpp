@@ -67,7 +67,7 @@ void class_greenfish::solve2d(  )
 			return;
 		}
 	}
-	if(lhs_div)
+	else if(lhs_div)
 	{
 		if(rX && rY)
 		{
@@ -213,7 +213,6 @@ void class_greenfish::solve2d(  )
 
 	for (i = 0; i < ncell[0]; ++i )
 	{
-
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Store fft mesh array in y-pencil
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
@@ -261,7 +260,6 @@ void class_greenfish::solve2d(  )
 //----------------------------------------------------------------------------//
 // Perform Fourier space operations
 //----------------------------------------------------------------------------//
-//		for (j = 0; j < ncell[1]; ++j )
 		for (j = 0; j < nfft; ++j )
 		{
 			ij = j * ncell[0] + i;
@@ -274,7 +272,7 @@ void class_greenfish::solve2d(  )
 				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
 				pen_lhs.Y[j] = ikY[j] * rhsG[ij] * pen_rhs.X[j];
 			}
-			if(lhs_div)
+			else if(lhs_div)
 			{
 				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
 				             + ikY[j] * rhsG[ij] * pen_rhs.Y[j];

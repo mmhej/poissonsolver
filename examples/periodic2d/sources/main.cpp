@@ -63,8 +63,8 @@ int main(int argc, char* argv[])
 
 	double * A;
 	double * B;
-	double * vX;
-	double * vY;
+	double * dAdX;
+	double * dAdY;
 
 	double diffX, diffY;
 
@@ -127,10 +127,10 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Allocate fields
 //----------------------------------------------------------------------------//
-	A  = new double[ncell[0] * ncell[1]]();
-	B  = new double[ncell[0] * ncell[1]]();
-	vX = new double[ncell[0] * ncell[1]]();
-	vY = new double[ncell[0] * ncell[1]]();
+	A    = new double[ncell[0] * ncell[1]]();
+	B    = new double[ncell[0] * ncell[1]]();
+	dAdX = new double[ncell[0] * ncell[1]]();
+	dAdY = new double[ncell[0] * ncell[1]]();
 
 //----------------------------------------------------------------------------//
 // Initiate fields
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push2d( NULL, NULL, B, NULL, NULL, NULL);
+	green.push2d( B, NULL, NULL, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -183,9 +183,10 @@ int main(int argc, char* argv[])
 #endif
 
 	A  = new double[ncell[0] * ncell[1]]();
-	vX = new double[ncell[0] * ncell[1]]();
-	vY = new double[ncell[0] * ncell[1]]();
-	green.pull2d( NULL, NULL, B, vX, vY, A );
+	dAdX = new double[ncell[0] * ncell[1]]();
+	dAdY = new double[ncell[0] * ncell[1]]();
+	green.pull2d( B, NULL, NULL, A, NULL, NULL );
+//	green.pull2d( B, NULL, NULL, dAdX, dAdY, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error

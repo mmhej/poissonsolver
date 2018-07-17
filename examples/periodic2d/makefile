@@ -6,7 +6,7 @@ PROGRAM  := periodic2d
 MAINFILE := ./main.cpp
 
 SRC_DIR  := ./sources
-OBJ_DIR  := ./objects
+OBJ_DIR  := ./build
 
 default: $(PROGRAM)
 

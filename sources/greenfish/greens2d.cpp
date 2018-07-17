@@ -397,6 +397,7 @@ void class_greenfish::greens2d(  )
 			{
 				ij = j * ncell[0] + i;
 
+
 				if( j == 0 )
 				{
 					rhsG[ij] = pen.X[icell[0] + i];
