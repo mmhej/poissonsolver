@@ -14,6 +14,9 @@
 //----------------------------------------------------------------------------//
 // Include subroutines
 //----------------------------------------------------------------------------//
+#include "greenfish/constructor.cpp"
+#include "greenfish/destructor.cpp"
+
 #include "greenfish/map2d.cpp"
 
 #include "greenfish/special_functions.cpp"

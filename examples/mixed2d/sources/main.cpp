@@ -37,15 +37,16 @@ int main(int argc, char* argv[])
 	const double domain_xmin[2]   = {-1.0, -1.0};
 	const double domain_xmax[2]   = { 1.0,  1.0};
 
-	int domain_bounds[2] = {0,0};
-//	int domain_bounds[2] = {1,1};
+	int domain_bounds[2] = {1,0};
 
 //	int domain_ncell[2]  = { 64, 64};
 	int domain_ncell[2]  = { 128, 128};
+//	int domain_ncell[2]  = { 256, 256};
+//	int domain_ncell[2]  = { 512, 512};
 //	int domain_ncell[2]  = { 1024, 1024};
 //	int domain_ncell[2]  = { 2048, 2048};
 //	int domain_ncell[2]  = { 3000, 3000};
-//	int domain_ncell[2]  = { 4096, 4096};
+
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -60,9 +61,6 @@ int main(int argc, char* argv[])
 
 	double err, error;
 	double nrm, norm;
-
-	double * test;
-	double * sines;
 
 	double * A;
 	double * B;
@@ -94,13 +92,10 @@ int main(int argc, char* argv[])
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 
-//	std::cout << "rank: " << rank << std::endl;
-//	MPI_Barrier(MPI_COMM_WORLD);
-
-	for( d = 0; d < 5; ++d) // convergence test loop
-	{
-	domain_ncell[0] = pow(2, d+4);
-	domain_ncell[1] = pow(2, d+4);
+//	for( d = 0; d < 5; ++d) // convergence test loop
+//	{
+//	domain_ncell[0] = pow(2, d+4);
+//	domain_ncell[1] = pow(2, d+4);
 
 //----------------------------------------------------------------------------//
 // Setup domain
@@ -118,7 +113,7 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.rhs_curl = true;
+	green.lhs_curl = true; // specify lhs operator
 	green.setup2d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -133,12 +128,10 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Allocate fields
 //----------------------------------------------------------------------------//
-//	test  = new double[ncell[0] * ncell[1]]();
-//	sines = new double[ncell[0] * ncell[1]]();
-
+	A  = new double[ncell[0] * ncell[1]]();
 	B  = new double[ncell[0] * ncell[1]]();
-	vX  = new double[ncell[0] * ncell[1]]();
-	vY  = new double[ncell[0] * ncell[1]]();
+	vX = new double[ncell[0] * ncell[1]]();
+	vY = new double[ncell[0] * ncell[1]]();
 
 //----------------------------------------------------------------------------//
 // Initiate fields
@@ -151,12 +144,20 @@ int main(int argc, char* argv[])
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
 			ij = j * ncell[0] + i;
 
-//			B[ij] = 8.0 * pi * pi * sin(2.0*pi*x) * sin(2.0*pi*y);
-
-			r = sqrt(x*x + y*y);
-			if( r < r0 )
+			if(std::abs(y) < r0)
 			{
-				B[ij] = 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4);
+				B[ij] = ( exp( c * pow(y,2) / ( (y - 1.0)*(y + 1.0) ) )
+				      * sin( pi * x ) 
+				      * ( 1.0 * pow(pi,2) * pow(y,8) 
+				        - 4.0 * pow(pi,2) * pow(y,6) 
+				        + 6.0 * pow(pi,2) * pow(y,4)
+				        - 6.0 * c         * pow(y,4) 
+				        - 4.0 * pow(pi,2) * pow(y,2)
+				        - 4.0 * pow(c,2)  * pow(y,2)
+				        + 4.0 * c         * pow(y,2) 
+				        + 1.0 * pow(pi,2) 
+				        + 2.0 * c ) 
+				        )/( pow(y - 1.0,4) * pow(y + 1.0,4) );
 			}
 			else
 			{
@@ -221,29 +222,18 @@ int main(int argc, char* argv[])
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
 			ij = j * ncell[0] + i;
 
-// Sine function
-//			err += dx[0]*dx[1]* pow( sines_sol[ij] - sin(2.0*pi*x) * sin(2.0*pi*y), 2 );
-//			nrm += dx[0]*dx[1]* pow( sin(2.0*pi*x) * sin(2.0*pi*y), 2 );
-
-
-// Bump function
-			r = sqrt(x*x + y*y);
-			if( r < r0 )
+			if(std::abs(y) < r0)
 			{
 // A
-//				err += dx[0]*dx[1]* pow( A[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2))) , 2);
-//				nrm += dx[0]*dx[1]* pow( exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2))), 2 );
 
 // B
-//				err += dx[0]*dx[1]* pow( bump[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4)) ,2);
-//				nrm += dx[0]*dx[1]* pow( 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4) ,2);
 
 // vector
-				err += dx[0]*dx[1]* pow( vX[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
-				nrm += dx[0]*dx[1]* pow( - 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
+				err += dx[0]*dx[1]* pow( vX[ij] - (- 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ) ) , 2);
+				nrm += dx[0]*dx[1]* pow( - 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ), 2);
 
-				err += dx[0]*dx[1]* pow( vY[ij] - ( 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
-				nrm += dx[0]*dx[1]* pow( 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
+				err += dx[0]*dx[1]* pow( vY[ij] - ( - pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x ) ), 2);
+				nrm += dx[0]*dx[1]* pow( - pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) )*cos( pi*x ), 2);
 
 			}
 			else
@@ -260,14 +250,14 @@ int main(int argc, char* argv[])
 	}
 
 	MPI_Reduce( &err, &error, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
-	MPI_Reduce( &nrm, &norm, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
+	MPI_Reduce( &nrm,  &norm, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
 	if(rank == 0)
 	{
 		std::cout << "Error: " << std::scientific << std::setw(7) << ncell[0] << std::setw(17) << dx[0] << std::setw(17) << sqrt( error/norm ) << std::endl;
 	}
 
 
-	} // convergence test loop
+//	} // convergence test loop
 
 
 
@@ -300,28 +290,24 @@ int main(int argc, char* argv[])
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
 			ij = j * ncell[0] + i;
 
-//			err = dx[0]*dx[1]* pow( sines_sol[ij] - sin(2.0*pi*x) * sin(2.0*pi*y), 2 );
-//			nrm = dx[0]*dx[1]* pow( sin(2.0*pi*x) * sin(2.0*pi*y), 2 );
-
-
-			r = sqrt(x*x + y*y);
-			if( r < r0 )
+			if(std::abs(y) < r0)
 			{
 // A
-//				err = dx[0]*dx[1]* A[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2)));
 
 // B
-//				err = dx[0]*dx[1]* pow( B[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4)) ,2);
 
 // v
-				diffX = vX[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
-				diffY = vY[ij] - ( 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
+				diffX = vX[ij] - (- 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ) );
+
+				diffY = vY[ij] - ( - pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x ) );
 
 			}
 			else
 			{
-//				err = dx[0]*dx[1]* pow( B[ij], 2);
-//				err = dx[0]*dx[1]* pow( bump[ij], 2 );
+//				err = A[ij];
+//				err = B[ij];
+				diffX = vX[ij];
+				diffY = vY[ij];
 			}
 
 //			err = A[ij];

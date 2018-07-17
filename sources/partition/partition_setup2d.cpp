@@ -45,7 +45,6 @@ std::vector<class_partition_info> partition_setup2d( int pencil_dir,
 //----------------------------------------------------------------------------//
 // Partition into pencil partition given the input direction
 //----------------------------------------------------------------------------//
-
 	if(pencil_dir == 0)
 	{
 		nsub[0] = 1;
@@ -125,12 +124,15 @@ std::vector<class_partition_info> partition_setup2d( int pencil_dir,
 //----------------------------------------------------------------------------//
 			partition.ncell[0] = ncell[0];
 			partition.ncell[1] = ncell[1];
+			partition.ncell[2] = 1;
 
 			partition.icell[0] = icell[0];
 			partition.icell[1] = icell[1];
+			partition.icell[2] = 0;
 
 			partition.dx[0]    = dx[0];
 			partition.dx[1]    = dx[1];
+			partition.dx[2]    = 0.0;
 
 			partition_all.push_back( partition );
 

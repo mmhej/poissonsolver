@@ -29,7 +29,7 @@ void class_greenfish::setup2d( int ncell[2], int bound_cond[2], double dx[2] )
 
 	domain_bc[0] = bound_cond[0];
 	domain_bc[1] = bound_cond[1];
-	domain_bc[2] = 0;
+	domain_bc[2] = -1;
 
 	domain_dx[0] = dx[0];
 	domain_dx[1] = dx[1];

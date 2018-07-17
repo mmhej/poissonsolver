@@ -39,30 +39,32 @@ class class_pencil
 //----------------------------------------------------------------------------//
 // Public variables
 //----------------------------------------------------------------------------//
-	int nfft;
+		int nfft;
 
-	bool bX;
-	bool bY;
-	bool bZ;
+		bool bX;
+		bool bY;
+		bool bZ;
 
-	std::complex<double> * X    = NULL;
-	std::complex<double> * Y    = NULL;
-	std::complex<double> * Z    = NULL;
+		std::complex<double> * X    = NULL;
+		std::complex<double> * Y    = NULL;
+		std::complex<double> * Z    = NULL;
 
-	std::complex<double> * auxX = NULL;
-	std::complex<double> * auxY = NULL;
-	std::complex<double> * auxZ = NULL;
+		std::complex<double> * auxX = NULL;
+		std::complex<double> * auxY = NULL;
+		std::complex<double> * auxZ = NULL;
 
 //----------------------------------------------------------------------------//
 // Prototype subroutines
 //----------------------------------------------------------------------------//
-	class_pencil( bool, bool, bool );
-	void resize( int );
+		class_pencil( bool, bool, bool );
+		~class_pencil( void );
 
-	void fft_shift( );
+		void resize( int );
 
-	void fft( );
-	void ifft( );
+		void fft_shift( void );
+
+		void fft( void );
+		void ifft( void );
 
 };
 

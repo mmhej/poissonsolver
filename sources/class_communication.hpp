@@ -105,6 +105,7 @@ class class_communication
 //----------------------------------------------------------------------------//
 // Prototype public subroutines
 //----------------------------------------------------------------------------//
+		void setup( std::vector<class_partition_info>, std::vector<class_partition_info> );
 		void setup2d( std::vector<class_partition_info>, std::vector<class_partition_info> );
 
 };

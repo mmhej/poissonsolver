@@ -1,23 +1,50 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         class_pencil.cpp
+  File:         destructor.cpp
 
-  Description:  Contains the pencil class
+  Description:  
 */
 //----------------------------------------------------------------------------//
+class_pencil::~class_pencil( void )
+{
 
 //----------------------------------------------------------------------------//
-// Include header file
+// De-allocate arrays from memory
 //----------------------------------------------------------------------------//
-#include "class_pencil.hpp"
+	if( X != NULL )
+	{
+		delete [] X;
+		X = NULL;
+	}
+	if( Y != NULL )
+	{
+		delete [] Y;
+		Y = NULL;
+	}
+	if( Z != NULL )
+	{
+		delete [] Z;
+		Z = NULL;
+	}
+
+	if( auxX != NULL )
+	{
+		delete [] auxX;
+		auxX = NULL;
+	}
+	if( auxY != NULL )
+	{
+		delete [] auxY;
+		auxY = NULL;
+	}
+	if( auxZ != NULL )
+	{
+		delete [] auxZ;
+		auxZ = NULL;
+	}
 
 //----------------------------------------------------------------------------//
-// Include functions
+// Return
 //----------------------------------------------------------------------------//
-#include "pencil/constructor.cpp"
-#include "pencil/destructor.cpp"
-
-#include "pencil/resize.cpp"
-#include "pencil/fft_shift.cpp"
-#include "pencil/fft.cpp"
-#include "pencil/ifft.cpp"
+	return;
+}

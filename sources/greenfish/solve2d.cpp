@@ -52,7 +52,7 @@ void class_greenfish::solve2d(  )
 	if( rhsY != NULL ){ rY = true; }
 	if( rhsZ != NULL ){ rZ = true; }
 
-	if(rhs_grad)
+	if(lhs_grad)
 	{
 		if(rX)
 		{
@@ -67,7 +67,7 @@ void class_greenfish::solve2d(  )
 			return;
 		}
 	}
-	if(rhs_div)
+	if(lhs_div)
 	{
 		if(rX && rY)
 		{
@@ -81,7 +81,7 @@ void class_greenfish::solve2d(  )
 			return;
 		}
 	}
-	else if(rhs_curl)
+	else if(lhs_curl)
 	{
 		if(rZ)
 		{
@@ -269,17 +269,17 @@ void class_greenfish::solve2d(  )
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Do convolution
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-			if(rhs_grad)
+			if(lhs_grad)
 			{
 				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
 				pen_lhs.Y[j] = ikY[j] * rhsG[ij] * pen_rhs.X[j];
 			}
-			if(rhs_div)
+			if(lhs_div)
 			{
 				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
 				             + ikY[j] * rhsG[ij] * pen_rhs.Y[j];
 			}
-			else if(rhs_curl)
+			else if(lhs_curl)
 			{
 				pen_lhs.X[j] =   ikY[j] * rhsG[ij] * pen_rhs.Z[j];
 				pen_lhs.Y[j] = - ikX[i] * rhsG[ij] * pen_rhs.Z[j];

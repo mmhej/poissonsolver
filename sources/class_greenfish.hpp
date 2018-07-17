@@ -66,11 +66,12 @@ class class_greenfish
 		std::complex<double> * lhsY = NULL;
 		std::complex<double> * lhsZ = NULL;
 
-		std::complex<double> * mapG = NULL;
-		std::complex<double> * rhsG = NULL;
-
 		std::complex<double> * ikX = NULL;
 		std::complex<double> * ikY = NULL;
+		std::complex<double> * ikZ = NULL;
+
+		std::complex<double> * mapG = NULL;
+		std::complex<double> * rhsG = NULL;
 
 //----------------------------------------------------------------------------//
 // Prototype private routines
@@ -85,15 +86,18 @@ class class_greenfish
 		class_partition partition;
 
 // Options
-		bool rhs_grad      = false;
-		bool rhs_div       = false;
-		bool rhs_curl      = false;
+		bool lhs_grad      = false;
+		bool lhs_div       = false;
+		bool lhs_curl      = false;
 		bool rhs_reproject = false;
 		int regularisation = 0;
 
 //----------------------------------------------------------------------------//
 // Prototype public routines
 //----------------------------------------------------------------------------//
+		class_greenfish( void );
+		~class_greenfish( void );
+
 		void setup2d( int [2], int [2], double [2] );
 		void solve2d(  );
 

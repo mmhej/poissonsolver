@@ -34,13 +34,10 @@ void class_greenfish::greens2d(  )
 	double  xmin[2];
 
 	double  x,y,r,rho;
-	double sigma;
-	double dk;
-	double * kX;
-	double * kY;
+	double  sigma;
+	double  dk;
 
-	double kL;
-	double kx2, ky2;
+	double  C;
 
 //----------------------------------------------------------------------------//
 // Get MPI info
@@ -115,6 +112,10 @@ void class_greenfish::greens2d(  )
 //============================================================================//
 // Create Greens functions
 //============================================================================//
+
+//============================================================================//
+// Unbounded domain
+//============================================================================//
 	if(domain_bc[0] == 0 && domain_bc[1] == 0)
 	{
 //----------------------------------------------------------------------------//
@@ -141,6 +142,10 @@ void class_greenfish::greens2d(  )
 		xmin[0] = - ( 0.5 * double( xpen[rank].ncell[0] ) )*dx[0];
 		xmin[1] = - ( 0.5 * double( ypen[rank].ncell[1] ) )*dx[1];
 
+		sigma = dx[0]/pi; // Spectral
+//		sigma = 2.0*dx[0]; // super-Gaussian
+		C = log(2.0*sigma) - gamma;
+
 		for (j = 0; j < ncell[1]; ++j )
 		{
 			y = xmin[1] + double( icell[1] + j )*dx[1];
@@ -154,9 +159,8 @@ void class_greenfish::greens2d(  )
 				r = sqrt(x*x + y*y);
 
 
-// 10th order super-gaussian
+// 10th order super-Gaussian
 /*
-				sigma = 2.0*dx[0];
 				rho = r/sigma;
 				if(r > 0.25*dx[0])
 				{
@@ -169,9 +173,8 @@ void class_greenfish::greens2d(  )
 */
 
 // Spectral
-				sigma = dx[0]/pi;
 				rho = r/sigma;
-				pen.X[i] = {- c_1_2pi * ( bessel_int_J0( rho ) + log(2.0*sigma) - gamma ) * dx[0]*dx[1], 0.0};
+				pen.X[i] = {- c_1_2pi * ( bessel_int_J0( rho ) + C ) * dx[0]*dx[1], 0.0};
 			}
 
 			pen.fft_shift( );
@@ -235,11 +238,14 @@ void class_greenfish::greens2d(  )
 		mapG = NULL;
 
 	}
+//============================================================================//
+// Periodic domain
+//============================================================================//
 	else if(domain_bc[0] == 1 && domain_bc[1] == 1)
 	{
 
 //----------------------------------------------------------------------------//
-// FFT y-pencils
+// Calculate Greens function direcly in Fourier space on y-pencil partition
 //----------------------------------------------------------------------------//
 		ncell[0] = ypen[rank].ncell[0];
 		ncell[1] = ypen[rank].ncell[1];
@@ -254,24 +260,171 @@ void class_greenfish::greens2d(  )
 
 		for (i = 0; i < ncell[0]; ++i )
 		{
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Store fft mesh array in y-pencil (fft-shifted)
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 			for(j = 0; j < ncell[1]; ++j )
 			{
 				ij = j * ncell[0] + i;
-
-				if( j > 0 || i > 0 || icell[0] > 0 )
+				if( icell[0] == 0 && i == 0 && j == 0 )
 				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+					rhsG[ij] = {0.0,0.0};
 				}
 				else
 				{
-					rhsG[ij] = {0.0,0.0};
+					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
 			}
 		}
 
+	}
+//============================================================================//
+// Periodic-unbounded domain
+//============================================================================//
+	else if(domain_bc[0] == 1 && domain_bc[1] == 0)
+	{
+
+		ncell[0] = ypen[rank].ncell[0];
+		ncell[1] = ypen[rank].ncell[1];
+
+		icell[0] = ypen[rank].icell[0];
+		icell[1] = ypen[rank].icell[1];
+
+		dx[0]    = ypen[rank].dx[0];
+		dx[1]    = ypen[rank].dx[1];
+
+		xmin[0] = - ( 0.5 * double( xpen[rank].ncell[0] ) )*dx[0];
+		xmin[1] = - ( 0.5 * double( ypen[rank].ncell[1] ) )*dx[1];
+
+//----------------------------------------------------------------------------//
+// Calculate 1D free-space Greens function and Fourier transform it
+//----------------------------------------------------------------------------//
+		class_pencil pen(true,false,false);
+
+		pen.resize( ncell[1] );
+
+		sigma = dx[1]/pi; // Spectral
+		C = sigma/pi;
+		for(j = 0; j < ncell[1]; ++j )
+		{
+			y = xmin[1] + double( j )*dx[1];
+
+// Spectral
+			rho = std::abs(y)/sigma;
+			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[1], 0.0};
+		}
+
+		pen.fft_shift( );
+		pen.fft( );
+
+//----------------------------------------------------------------------------//
+// Construct Greens function in Fourier space on y-pencil partition
+//----------------------------------------------------------------------------//
+		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		for (i = 0; i < ncell[0]; ++i )
+		{
+			for(j = 0; j < ncell[1]; ++j )
+			{
+				ij = j * ncell[0] + i;
+
+				if( icell[0] == 0 && i == 0 )
+				{
+					rhsG[ij] = pen.X[j];
+				}
+				else
+				{
+					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+				}
+
+/*
+				if( icell[0] == 0 && i == 0 && j == 0 )
+				{
+					rhsG[ij] = {0.0,0.0};
+				}
+				else
+				{
+					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+				}
+*/
+
+			}
+		}
+
+	}
+//============================================================================//
+// Unbounded-periodic domain
+//============================================================================//
+	else if(domain_bc[0] == 0 && domain_bc[1] == 1)
+	{
+
+		ncell[0] = ypen[rank].ncell[0];
+		ncell[1] = ypen[rank].ncell[1];
+
+		icell[0] = ypen[rank].icell[0];
+		icell[1] = ypen[rank].icell[1];
+
+		dx[0]    = ypen[rank].dx[0];
+		dx[1]    = ypen[rank].dx[1];
+
+		nfft = xpen[rank].ncell[0];
+		xmin[0] = - ( 0.5 * double( nfft ) )*dx[0];
+
+//----------------------------------------------------------------------------//
+// Calculate 1D free-space Greens function and Fourier transform it
+//----------------------------------------------------------------------------//
+		class_pencil pen(true,false,false);
+
+		pen.resize( nfft );
+
+		sigma = dx[0]/pi; // Spectral
+		C = sigma/pi;
+		for(i = 0; i < nfft; ++i )
+		{
+			x = xmin[0] + double( i )*dx[0];
+
+// Spectral
+			rho = std::abs(x)/sigma;
+			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[0], 0.0};
+		}
+
+		pen.fft_shift( );
+		pen.fft( );
+
+//----------------------------------------------------------------------------//
+// Construct Greens function in Fourier space on y-pencil partition
+//----------------------------------------------------------------------------//
+		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		for (i = 0; i < ncell[0]; ++i )
+		{
+			for(j = 0; j < ncell[1]; ++j )
+			{
+				ij = j * ncell[0] + i;
+
+				if( j == 0 )
+				{
+					rhsG[ij] = pen.X[icell[0] + i];
+				}
+				else
+				{
+					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+				}
+
+/*
+				if( icell[0] == 0 && i == 0 && j == 0 )
+				{
+					rhsG[ij] = {0.0,0.0};
+				}
+				else
+				{
+					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+				}
+*/
+
+			}
+		}
+
+	}
+	else
+	{
+		std::cerr << " [greenfish.solve]: Boundary condition configuration unknown."
+		          << std::endl;
 	}
 
 //----------------------------------------------------------------------------//

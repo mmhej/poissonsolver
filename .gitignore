@@ -1,0 +1,7 @@
+*build/
+*include/
+mesh_P*
+*.a
+*.log
+*.gnu
+*.ps

@@ -1,17 +1,24 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         class_pencil.cpp
+  File:         constructor.cpp
 
   Description:  
 */
 //----------------------------------------------------------------------------//
-
-class_pencil::class_pencil( bool inX, bool inY, bool inZ )
+class_greenfish::class_greenfish( void )
 {
 
-	class_pencil::bX = inX;
-	class_pencil::bY = inY;
-	class_pencil::bZ = inZ;
+/*
+	int     nproc, rank;
+
+	MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if(rank == 0)
+	{
+		std::cout << " [greenfish]: Constructing greenfish object." << std::endl;
+	}
+*/
 
 //----------------------------------------------------------------------------//
 // Return
