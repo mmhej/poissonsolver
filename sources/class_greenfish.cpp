@@ -23,6 +23,7 @@
 #include "greenfish/greens2d.cpp"
 
 #include "greenfish/setup2d.cpp"
+#include "greenfish/setup3d.cpp"
 
 #include "greenfish/solve2d.cpp"
 

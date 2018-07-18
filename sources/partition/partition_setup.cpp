@@ -1,37 +1,38 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         partition_setup2d.cpp
+  File:         partition_setup.cpp
 
   Description:  
 */
 //----------------------------------------------------------------------------//
 
-std::vector<class_partition_info> partition_setup2d( int pencil_dir, 
-                                                     int domain_ncell[2], 
-                                                     int bound_cond[2],
-                                                     double dx[2],
-                                                     bool extendX,
-                                                     bool extendY )
+std::vector<class_partition> partition_setup( int pencil_dir, 
+                                              int domain_ncell[3], 
+                                              int bound_cond[3],
+                                              double dx[3],
+                                              bool extendX,
+                                              bool extendY,
+                                              bool extendZ )
 {
 
 //----------------------------------------------------------------------------//
 // Local variables
 //----------------------------------------------------------------------------//
-	int i,j;
+	int i,j,k;
 	int nproc, rank;
-	int nsub[2];
-	int dom_ncell[2];
-	int ncell[2];
-	int icell[2];
+	int nsub[3];
+	int dom_ncell[3];
+	int ncell[3];
+	int icell[3];
 
-	int rem_ncell[2];
+	int rem_ncell[3];
 	int iproc;
 
 //----------------------------------------------------------------------------//
 // Objects
 //----------------------------------------------------------------------------//
-	class_partition_info partition;
-	std::vector<class_partition_info> partition_all;
+	class_partition part;
+	std::vector<class_partition> part_all;
 
 //----------------------------------------------------------------------------//
 // Get MPI info
@@ -49,11 +50,18 @@ std::vector<class_partition_info> partition_setup2d( int pencil_dir,
 	{
 		nsub[0] = 1;
 		nsub[1] = nproc;
+		nsub[2] = 1;
 	}
 	else if(pencil_dir == 1)
 	{
 		nsub[0] = nproc;
 		nsub[1] = 1;
+		nsub[2] = 1;
+	}
+	else
+	{
+		std::cerr << " [greenfish.partition_setup3d]: Error." << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
 //----------------------------------------------------------------------------//
@@ -78,6 +86,14 @@ std::vector<class_partition_info> partition_setup2d( int pencil_dir,
 		dom_ncell[1] = domain_ncell[1];
 	}
 
+	if(bound_cond[2] == 0 && extendZ)
+	{
+		dom_ncell[2] = 2*domain_ncell[2];
+	}
+	else
+	{
+		dom_ncell[2] = domain_ncell[2];
+	}
 
 //----------------------------------------------------------------------------//
 // Assign subdomains and keep track of the local index of the subdomain on
@@ -93,59 +109,75 @@ std::vector<class_partition_info> partition_setup2d( int pencil_dir,
 		for(j = 0; j < nsub[1]; ++j)
 		{
 
+			icell[2] = 0;
+			for(k = 0; k < nsub[2]; ++k)
+			{
+
+
 //----------------------------------------------------------------------------//
 // Divide the grid points to subdomain (ghost not included)
 // If the grid points does not equally divide with the number of processors
 // the remaining grid points are distributed equally over the last processors
 //----------------------------------------------------------------------------//
-			rem_ncell[0] = dom_ncell[0] % nsub[0];
-			rem_ncell[1] = dom_ncell[1] % nsub[1];
+				rem_ncell[0] = dom_ncell[0] % nsub[0];
+				rem_ncell[1] = dom_ncell[1] % nsub[1];
+				rem_ncell[2] = dom_ncell[2] % nsub[2];
 
-			if(i >= nsub[0]-rem_ncell[0])
-			{
-				ncell[0] = dom_ncell[0]/nsub[0] + 1;
-			}
-			else
-			{
-				ncell[0] = dom_ncell[0]/nsub[0];
-			}
+				if(i >= nsub[0]-rem_ncell[0])
+				{
+					ncell[0] = dom_ncell[0]/nsub[0] + 1;
+				}
+				else
+				{
+					ncell[0] = dom_ncell[0]/nsub[0];
+				}
 
-			if(j >= nsub[1]-rem_ncell[1])
-			{
-				ncell[1] = dom_ncell[1]/nsub[1] + 1;
-			}
-			else
-			{
-				ncell[1] = dom_ncell[1]/nsub[1];
-			}
+				if(j >= nsub[1]-rem_ncell[1])
+				{
+					ncell[1] = dom_ncell[1]/nsub[1] + 1;
+				}
+				else
+				{
+					ncell[1] = dom_ncell[1]/nsub[1];
+				}
+
+				if(k >= nsub[2]-rem_ncell[2])
+				{
+					ncell[2] = dom_ncell[2]/nsub[2] + 1;
+				}
+				else
+				{
+					ncell[2] = dom_ncell[2]/nsub[2];
+				}
 
 //----------------------------------------------------------------------------//
 // Store the partition
 //----------------------------------------------------------------------------//
-			partition.ncell[0] = ncell[0];
-			partition.ncell[1] = ncell[1];
-			partition.ncell[2] = 1;
+				part.ncell[0] = ncell[0];
+				part.ncell[1] = ncell[1];
+				part.ncell[2] = ncell[2];
 
-			partition.icell[0] = icell[0];
-			partition.icell[1] = icell[1];
-			partition.icell[2] = 0;
+				part.icell[0] = icell[0];
+				part.icell[1] = icell[1];
+				part.icell[2] = icell[2];
 
-			partition.dx[0]    = dx[0];
-			partition.dx[1]    = dx[1];
-			partition.dx[2]    = 0.0;
+				part.dx[0]    = dx[0];
+				part.dx[1]    = dx[1];
+				part.dx[2]    = dx[2];
 
-			partition_all.push_back( partition );
+				part_all.push_back( part );
 
 //----------------------------------------------------------------------------//
 // Advance processor and cell counters
 //----------------------------------------------------------------------------//
-			++iproc;
+				++iproc;
+				icell[2] = icell[2] + ncell[2];
+			}
 			icell[1] = icell[1] + ncell[1];
 		}
-
 		icell[0] = icell[0] + ncell[0];
 	}
 
 
-	return partition_all;
+	return part_all;
 }

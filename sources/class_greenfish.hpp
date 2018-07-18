@@ -16,6 +16,7 @@
 // Include header files
 //----------------------------------------------------------------------------//
 // System
+#include <stdlib.h>
 #include <iostream>
 #include <vector>
 #include <complex>
@@ -45,6 +46,10 @@ class class_greenfish
 		int    domain_ncell[3];
 		int    domain_bc[3];
 		double domain_dx[3];
+
+		std::vector<class_partition> xpen;
+		std::vector<class_partition> ypen;
+		std::vector<class_partition> zpen;
 
 		class_communication real2xpen;
 		class_communication xpen2real;
@@ -83,7 +88,7 @@ class class_greenfish
 //----------------------------------------------------------------------------//
 // Public variables
 //----------------------------------------------------------------------------//
-		class_partition partition;
+		std::vector<class_partition> partition;
 
 // Options
 		bool lhs_grad      = false;
@@ -99,6 +104,8 @@ class class_greenfish
 		~class_greenfish( void );
 
 		void setup2d( int [2], int [2], double [2] );
+		void setup3d( int [3], int [3], double [3] );
+
 		void solve2d(  );
 
 		void push2d( double *, double *, double *, double *, double *, double * );

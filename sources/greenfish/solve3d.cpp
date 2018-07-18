@@ -1,11 +1,11 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         solve2d.cpp
+  File:         solve3d.cpp
 
   Description:  
 */
 //----------------------------------------------------------------------------//
-void class_greenfish::solve2d(  )
+void class_greenfish::solve3d(  )
 {
 
 //----------------------------------------------------------------------------//
@@ -19,7 +19,7 @@ void class_greenfish::solve2d(  )
 	int     nproc, rank;
 	int     i, j, jn, ij;
 	int     nfft;
-	int     ncell[2];
+	int     ncell[3];
 
 	bool rX = false;
 	bool rY = false;
@@ -167,6 +167,12 @@ void class_greenfish::solve2d(  )
 //----------------------------------------------------------------------------//
 	ncell[0] = ypen[rank].ncell[0];
 	ncell[1] = ypen[rank].ncell[1];
+
+	icell[0] = ypen[rank].icell[0];
+	icell[1] = ypen[rank].icell[1];
+
+	dx[0]    = ypen[rank].dx[0];
+	dx[1]    = ypen[rank].dx[1];
 
 	if(domain_bc[1] == 0)
 	{

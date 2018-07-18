@@ -16,6 +16,7 @@
 // Include header files
 //----------------------------------------------------------------------------//
 // System
+#include <stdlib.h>
 #include <vector>
 // External
 #include "mpi.h"
@@ -24,7 +25,7 @@
 //----------------------------------------------------------------------------//
 // Partition information class
 //----------------------------------------------------------------------------//
-class class_partition_info
+class class_partition
 {
 	private:
 //----------------------------------------------------------------------------//
@@ -41,29 +42,8 @@ class class_partition_info
 };
 
 //----------------------------------------------------------------------------//
-// Partition class
-//----------------------------------------------------------------------------//
-class class_partition
-{
-	private:
-//----------------------------------------------------------------------------//
-// Private variables
-//----------------------------------------------------------------------------//
-
-	public:
-//----------------------------------------------------------------------------//
-// Public variables
-//----------------------------------------------------------------------------//
-	std::vector<class_partition_info> real;
-
-	std::vector<class_partition_info> xpen;
-	std::vector<class_partition_info> ypen;
-	std::vector<class_partition_info> zpen;
-};
-
-//----------------------------------------------------------------------------//
 // Prototype module subroutines
 //----------------------------------------------------------------------------//
-	std::vector<class_partition_info> partition_setup2d( int, int [2], int [2], double [2], bool, bool );
+	std::vector<class_partition> partition_setup( int, int [3], int [3], double [3], bool, bool, bool );
 
 #endif

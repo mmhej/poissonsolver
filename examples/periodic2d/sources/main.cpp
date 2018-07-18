@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 	int     nproc, rank;
 	int     d;
-	int     i, j, ij, ji, pq;
+	int     i, j, jn, ij, ji, pq;
 	int     n;
 	double  x, y, r;
 	int     ncell[2];
@@ -118,11 +118,11 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Get mesh info
 //----------------------------------------------------------------------------//
-	ncell[0] = green.partition.real[rank].ncell[0];
-	ncell[1] = green.partition.real[rank].ncell[1];
+	ncell[0] = green.partition[rank].ncell[0];
+	ncell[1] = green.partition[rank].ncell[1];
 
-	xmin[0]  = domain_xmin[0] + dx[0] * double(green.partition.real[rank].icell[0]);
-	xmin[1]  = domain_xmin[1] + dx[1] * double(green.partition.real[rank].icell[1]);
+	xmin[0]  = domain_xmin[0] + dx[0] * double(green.partition[rank].icell[0]);
+	xmin[1]  = domain_xmin[1] + dx[1] * double(green.partition[rank].icell[1]);
 
 //----------------------------------------------------------------------------//
 // Allocate fields
@@ -137,11 +137,12 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 	for (j = 0; j < ncell[1]; ++j )
 	{
+		jn = j * ncell[0];
 		y = xmin[1] + (double(j) + 0.5)*dx[1];
 		for (i = 0; i < ncell[0]; ++i )
 		{
+			ij = jn + i;
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
-			ij = j * ncell[0] + i;
 
 			B[ij] = 8.0 * pi * pi * sin(2.0*pi*x) * sin(2.0*pi*y);
 
@@ -198,11 +199,12 @@ int main(int argc, char* argv[])
 
 	for (j = 0; j < ncell[1]; ++j )
 	{
+		jn = j * ncell[0];
 		y = xmin[1] + (double(j) + 0.5)*dx[1];
 		for (i = 0; i < ncell[0]; ++i )
 		{
+			ij = jn + i;
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
-			ij = j * ncell[0] + i;
 
 // Sine function
 			err += dx[0]*dx[1]* pow( A[ij] - sin(2.0*pi*x) * sin(2.0*pi*y), 2 );
@@ -246,11 +248,12 @@ int main(int argc, char* argv[])
 	}
 	for (j = 0; j < ncell[1]; ++j )
 	{
+		jn = j * ncell[0];
 		y = xmin[1] + (double(j) + 0.5)*dx[1];
 		for (i = 0; i < ncell[0]; ++i )
 		{
+			ij = jn + i;
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
-			ij = j * ncell[0] + i;
 
 			err = A[ij] - sin(2.0*pi*x) * sin(2.0*pi*y);
 

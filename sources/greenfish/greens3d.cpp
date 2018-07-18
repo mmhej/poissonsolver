@@ -1,11 +1,11 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         greens2d.cpp
+  File:         greens3d.cpp
 
   Description:  
 */
 //----------------------------------------------------------------------------//
-void class_greenfish::greens2d(  )
+void class_greenfish::greens3d(  )
 {
 
 //----------------------------------------------------------------------------//
@@ -27,10 +27,10 @@ void class_greenfish::greens2d(  )
 	int     nproc, rank;
 	int     i, j, jn, ij;
 	int     nfft;
-	int     ncell[2];
-	int     icell[2];
-	double  dx[2];
-	double  xmin[2];
+	int     ncell[3];
+	int     icell[3];
+	double  dx[3];
+	double  xmin[3];
 
 	double  x,y,r,rho;
 	double  sigma;
@@ -51,11 +51,9 @@ void class_greenfish::greens2d(  )
 	std::vector<class_partition> xpen_ext;
 	std::vector<class_partition> ypen_ext;
 
-	ncell[0] = domain_ncell[0];
-	ncell[1] = domain_ncell[1];
-
 	dx[0] = domain_dx[0];
 	dx[1] = domain_dx[1];
+	dx[2] = domain_dx[2];
 
 	xpen_ext = partition_setup( 0, domain_ncell, domain_bc, domain_dx, true, true, true );
 	ypen_ext = partition_setup( 1, domain_ncell, domain_bc, domain_dx, true, true, true );

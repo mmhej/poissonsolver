@@ -5,9 +5,10 @@
   Description:  
 */
 //----------------------------------------------------------------------------//
+class_communication::class_communication( void ){}
 
-void class_communication::setup( std::vector<class_partition_info> partition_send, 
-                                 std::vector<class_partition_info> partition_recv )
+class_communication::class_communication( std::vector<class_partition> partition_send, 
+                                          std::vector<class_partition> partition_recv )
 {
 
 //----------------------------------------------------------------------------//

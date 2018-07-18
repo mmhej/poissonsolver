@@ -1,12 +1,12 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         setup2d.cpp
+  File:         setup3d.cpp
 
   Description:  
 */
 //----------------------------------------------------------------------------//
 
-void class_greenfish::setup2d( int ncell[2], int bound_cond[2], double dx[2] )
+void class_greenfish::setup3d( int ncell[3], int bound_cond[3], double dx[3] )
 {
 
 //----------------------------------------------------------------------------//
@@ -25,31 +25,31 @@ void class_greenfish::setup2d( int ncell[2], int bound_cond[2], double dx[2] )
 //----------------------------------------------------------------------------//
 	domain_ncell[0] = ncell[0];
 	domain_ncell[1] = ncell[1];
-	domain_ncell[2] = 1;
+	domain_ncell[2] = ncell[2];
 
 	domain_bc[0] = bound_cond[0];
 	domain_bc[1] = bound_cond[1];
-	domain_bc[2] = -1;
+	domain_bc[2] = bound_cond[2];
 
 	domain_dx[0] = dx[0];
 	domain_dx[1] = dx[1];
-	domain_dx[2] = 0.0;
+	domain_dx[2] = dx[2];
 
 //----------------------------------------------------------------------------//
 // Setup real topology
 //----------------------------------------------------------------------------//
-	partition = partition_setup( 0, domain_ncell, domain_bc, domain_dx, false, false, false );
+	partition = partition_setup( 0, ncell, bound_cond, dx, false, false, false );
 
 //----------------------------------------------------------------------------//
 // Setup Greens function
 //----------------------------------------------------------------------------//
-	greens2d();
+//	greens2d();
 
 //----------------------------------------------------------------------------//
 // Setup pencil topologies
 //----------------------------------------------------------------------------//
 	xpen = partition_setup( 0, domain_ncell, domain_bc, domain_dx, true, false, false );
-	ypen = partition_setup( 1, domain_ncell, domain_bc, domain_dx, true, false, false );
+	ypen = partition_setup( 1, domain_ncell, domain_bc, domain_dx, true,  true, false );
 
 //----------------------------------------------------------------------------//
 // Construct communicators between topologies
