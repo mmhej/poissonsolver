@@ -1,24 +1,25 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         map2d.cpp
+  File:         map.cpp
 
   Description:  
 */
 //----------------------------------------------------------------------------//
 
-void class_greenfish::map2d( class_communication comm )
+void class_greenfish::map( class_communication comm )
 {
 
 //----------------------------------------------------------------------------//
 // Local variables
 //----------------------------------------------------------------------------//
-	int i,j,k,p,q,pq;
-	int nx;
+	int i,j,k;
+	int p, q, s, sn, sqn, pqs;
+	int nx, ny;
 	int nproc, rank;
 	int iproc, jproc;
 	int nsend, nrecv;
-	int imin[2], imax[2];
-	int ncell[2];
+	int imin[3], imax[3];
+	int ncell[3];
 	int nmap;
 	bool pack;
 
@@ -35,7 +36,7 @@ void class_greenfish::map2d( class_communication comm )
 //----------------------------------------------------------------------------//
 // Objects
 //----------------------------------------------------------------------------//
-	double * buffer_send = NULL;
+	double *  buffer_send = NULL;
 	double ** buffer_recv = new double * [comm.ncomm];
 
 //----------------------------------------------------------------------------//
@@ -64,8 +65,6 @@ void class_greenfish::map2d( class_communication comm )
 	for( i = 0; i < comm.ncomm; ++i )
 	{
 
-//		if(rank == 0){ std::cout << "COMM: " << i << std::endl; }
-//		MPI_Barrier(MPI_COMM_WORLD);
 //----------------------------------------------------------------------------//
 // Self-communication
 //----------------------------------------------------------------------------//
@@ -74,82 +73,86 @@ void class_greenfish::map2d( class_communication comm )
 
 			imin[0] = comm.info[i].i2j_min_send[0];
 			imin[1] = comm.info[i].i2j_min_send[1];
+			imin[2] = comm.info[i].i2j_min_send[2];
 
 			imax[0] = comm.info[i].i2j_max_send[0];
 			imax[1] = comm.info[i].i2j_max_send[1];
+			imax[2] = comm.info[i].i2j_max_send[2];
 
 			nx = comm.info[i].i2j_ncell_partition_send[0];
+			ny = comm.info[i].i2j_ncell_partition_send[1];
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Fill receive buffer directly
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 			nsend = 2 * nmap * comm.info[i].i2j_ncell[0]
-			                 * comm.info[i].i2j_ncell[1];
+			                 * comm.info[i].i2j_ncell[1]
+			                 * comm.info[i].i2j_ncell[2];
 			buffer_recv[i] = new double[ nsend ]();
 
 			k = 0;
-			for( q = imin[1]; q <= imax[1]; ++q )
+			for( s = imin[2]; s <= imax[2]; ++s )
 			{
-				for( p = imin[0]; p <= imax[0]; ++p )
+				sn = s * ny;
+				for( q = imin[1]; q <= imax[1]; ++q )
 				{
+					sqn = ( sn + q ) * nx;
+					for( p = imin[0]; p <= imax[0]; ++p )
+					{
+						pqs = sqn + p;
 
-					if( rX )
-					{
-						pq = q * nx + p;
-						buffer_recv[i][k] = std::real(rhsX[pq]);
-						++k;
-						buffer_recv[i][k] = std::imag(rhsX[pq]);
-						++k;
-					}
-					if( rY )
-					{
-						pq = q * nx + p;
-						buffer_recv[i][k] = std::real(rhsY[pq]);
-						++k;
-						buffer_recv[i][k] = std::imag(rhsY[pq]);
-						++k;
-					}
-					if( rZ )
-					{
-						pq = q * nx + p;
-						buffer_recv[i][k] = std::real(rhsZ[pq]);
-						++k;
-						buffer_recv[i][k] = std::imag(rhsZ[pq]);
-						++k;
-					}
+						if( rX )
+						{
+							buffer_recv[i][k] = std::real(rhsX[pqs]);
+							++k;
+							buffer_recv[i][k] = std::imag(rhsX[pqs]);
+							++k;
+						}
+						if( rY )
+						{
+							buffer_recv[i][k] = std::real(rhsY[pqs]);
+							++k;
+							buffer_recv[i][k] = std::imag(rhsY[pqs]);
+							++k;
+						}
+						if( rZ )
+						{
+							buffer_recv[i][k] = std::real(rhsZ[pqs]);
+							++k;
+							buffer_recv[i][k] = std::imag(rhsZ[pqs]);
+							++k;
+						}
 
-					if( lX )
-					{
-						pq = q * nx + p;
-						buffer_recv[i][k] = std::real(lhsX[pq]);
-						++k;
-						buffer_recv[i][k] = std::imag(lhsX[pq]);
-						++k;
-					}
-					if( lY )
-					{
-						pq = q * nx + p;
-						buffer_recv[i][k] = std::real(lhsY[pq]);
-						++k;
-						buffer_recv[i][k] = std::imag(lhsY[pq]);
-						++k;
-					}
-					if( lZ )
-					{
-						pq = q * nx + p;
-						buffer_recv[i][k] = std::real(lhsZ[pq]);
-						++k;
-						buffer_recv[i][k] = std::imag(lhsZ[pq]);
-						++k;
-					}
+						if( lX )
+						{
+							buffer_recv[i][k] = std::real(lhsX[pqs]);
+							++k;
+							buffer_recv[i][k] = std::imag(lhsX[pqs]);
+							++k;
+						}
+						if( lY )
+						{
+							buffer_recv[i][k] = std::real(lhsY[pqs]);
+							++k;
+							buffer_recv[i][k] = std::imag(lhsY[pqs]);
+							++k;
+						}
+						if( lZ )
+						{
+							buffer_recv[i][k] = std::real(lhsZ[pqs]);
+							++k;
+							buffer_recv[i][k] = std::imag(lhsZ[pqs]);
+							++k;
+						}
 
-					if( mG )
-					{
-						pq = q * nx + p;
-						buffer_recv[i][k] = std::real(mapG[pq]);
-						++k;
-						buffer_recv[i][k] = std::imag(mapG[pq]);
-						++k;
+						if( mG )
+						{
+							buffer_recv[i][k] = std::real(mapG[pqs]);
+							++k;
+							buffer_recv[i][k] = std::imag(mapG[pqs]);
+							++k;
+						}
+
 					}
 				}
 			}
@@ -174,26 +177,36 @@ void class_greenfish::map2d( class_communication comm )
 
 				imin[0] = comm.info[i].i2j_min_send[0];
 				imin[1] = comm.info[i].i2j_min_send[1];
+				imin[2] = comm.info[i].i2j_min_send[2];
 
 				imax[0] = comm.info[i].i2j_max_send[0];
 				imax[1] = comm.info[i].i2j_max_send[1];
+				imax[2] = comm.info[i].i2j_max_send[2];
 
 				nsend = 2 * nmap * comm.info[i].i2j_ncell[0]
-				                 * comm.info[i].i2j_ncell[1];
+				                 * comm.info[i].i2j_ncell[1]
+				                 * comm.info[i].i2j_ncell[2];
+
 				nx = comm.info[i].i2j_ncell_partition_send[0];
+				ny = comm.info[i].i2j_ncell_partition_send[1];
 			}
 			else if( rank == jproc && comm.info[i].nway > 1 )
 			{
 
 				imin[0] = comm.info[i].j2i_min_send[0];
 				imin[1] = comm.info[i].j2i_min_send[1];
+				imin[2] = comm.info[i].j2i_min_send[2];
 
 				imax[0] = comm.info[i].j2i_max_send[0];
 				imax[1] = comm.info[i].j2i_max_send[1];
+				imax[2] = comm.info[i].j2i_max_send[2];
 
 				nsend = 2 * nmap * comm.info[i].j2i_ncell[0]
-				                 * comm.info[i].j2i_ncell[1];
+				                 * comm.info[i].j2i_ncell[1]
+				                 * comm.info[i].j2i_ncell[2];
+
 				nx = comm.info[i].j2i_ncell_partition_send[0];
+				ny = comm.info[i].j2i_ncell_partition_send[1];
 			}
 			else
 			{
@@ -207,67 +220,69 @@ void class_greenfish::map2d( class_communication comm )
 			{
 				buffer_send = new double[ nsend ]();
 				k = 0;
-				for( q = imin[1]; q <= imax[1]; ++q )
+
+				for( s = imin[2]; s <= imax[2]; ++s )
 				{
-					for( p = imin[0]; p <= imax[0]; ++p )
+					sn = s * ny;
+					for( q = imin[1]; q <= imax[1]; ++q )
 					{
+						sqn = ( sn + q ) * nx;
+						for( p = imin[0]; p <= imax[0]; ++p )
+						{
+							pqs = sqn + p;
 
-						if( rX )
-						{
-							pq = q * nx + p;
-							buffer_send[k] = std::real(rhsX[pq]);
-							++k;
-							buffer_send[k] = std::imag(rhsX[pq]);
-							++k;
-						}
-						if( rY )
-						{
-							pq = q * nx + p;
-							buffer_send[k] = std::real(rhsY[pq]);
-							++k;
-							buffer_send[k] = std::imag(rhsY[pq]);
-							++k;
-						}
-						if( rZ )
-						{
-							pq = q * nx + p;
-							buffer_send[k] = std::real(rhsZ[pq]);
-							++k;
-							buffer_send[k] = std::imag(rhsZ[pq]);
-							++k;
-						}
-						if( lX )
-						{
-							pq = q * nx + p;
-							buffer_send[k] = std::real(lhsX[pq]);
-							++k;
-							buffer_send[k] = std::imag(lhsX[pq]);
-							++k;
-						}
-						if( lY )
-						{
-							pq = q * nx + p;
-							buffer_send[k] = std::real(lhsY[pq]);
-							++k;
-							buffer_send[k] = std::imag(lhsY[pq]);
-							++k;
-						}
-						if( lZ )
-						{
-							pq = q * nx + p;
-							buffer_send[k] = std::real(lhsZ[pq]);
-							++k;
-							buffer_send[k] = std::imag(lhsZ[pq]);
-							++k;
-						}
 
-						if( mG )
-						{
-							pq = q * nx + p;
-							buffer_send[k] = std::real(mapG[pq]);
-							++k;
-							buffer_send[k] = std::imag(mapG[pq]);
-							++k;
+							if( rX )
+							{
+								buffer_send[k] = std::real(rhsX[pqs]);
+								++k;
+								buffer_send[k] = std::imag(rhsX[pqs]);
+								++k;
+							}
+							if( rY )
+							{
+								buffer_send[k] = std::real(rhsY[pqs]);
+								++k;
+								buffer_send[k] = std::imag(rhsY[pqs]);
+								++k;
+							}
+							if( rZ )
+							{
+								buffer_send[k] = std::real(rhsZ[pqs]);
+								++k;
+								buffer_send[k] = std::imag(rhsZ[pqs]);
+								++k;
+							}
+							if( lX )
+							{
+								buffer_send[k] = std::real(lhsX[pqs]);
+								++k;
+								buffer_send[k] = std::imag(lhsX[pqs]);
+								++k;
+							}
+							if( lY )
+							{
+								buffer_send[k] = std::real(lhsY[pqs]);
+								++k;
+								buffer_send[k] = std::imag(lhsY[pqs]);
+								++k;
+							}
+							if( lZ )
+							{
+								buffer_send[k] = std::real(lhsZ[pqs]);
+								++k;
+								buffer_send[k] = std::imag(lhsZ[pqs]);
+								++k;
+							}
+
+							if( mG )
+							{
+								buffer_send[k] = std::real(mapG[pqs]);
+								++k;
+								buffer_send[k] = std::imag(mapG[pqs]);
+								++k;
+							}
+
 						}
 					}
 				}
@@ -287,7 +302,8 @@ void class_greenfish::map2d( class_communication comm )
 				else if( rank == jproc ) // Receiver
 				{
 					nrecv = 2 * nmap * comm.info[i].i2j_ncell[0] 
-					                 * comm.info[i].i2j_ncell[1];
+					                 * comm.info[i].i2j_ncell[1] 
+					                 * comm.info[i].i2j_ncell[2];
 					buffer_recv[i] = new double[ nrecv ]();
 					MPI_Recv( buffer_recv[i], nrecv, MPI_DOUBLE, iproc, jproc, 
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE );
@@ -303,7 +319,8 @@ void class_greenfish::map2d( class_communication comm )
 				else if( rank == iproc ) // Receiver
 				{
 					nrecv = 2 * nmap * comm.info[i].j2i_ncell[0] 
-					                 * comm.info[i].j2i_ncell[1];
+					                 * comm.info[i].j2i_ncell[1] 
+					                 * comm.info[i].j2i_ncell[2];
 					buffer_recv[i] = new double[ nrecv ]();
 					MPI_Recv( buffer_recv[i], nrecv, MPI_DOUBLE, jproc, iproc, 
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE );
@@ -314,7 +331,8 @@ void class_greenfish::map2d( class_communication comm )
 				if( rank == iproc )
 				{
 					nrecv = 2 * nmap * comm.info[i].j2i_ncell[0]
-					                 * comm.info[i].j2i_ncell[1];
+					                 * comm.info[i].j2i_ncell[1]
+					                 * comm.info[i].j2i_ncell[2];
 					buffer_recv[i] = new double[ nrecv ]();
 					MPI_Sendrecv( buffer_send, nsend, MPI_DOUBLE, jproc, iproc, 
 					              buffer_recv[i], nrecv, MPI_DOUBLE, jproc, jproc, 
@@ -323,7 +341,8 @@ void class_greenfish::map2d( class_communication comm )
 				else if( rank == jproc )
 				{
 					nrecv = 2 * nmap * comm.info[i].i2j_ncell[0]
-					                 * comm.info[i].i2j_ncell[1];
+					                 * comm.info[i].i2j_ncell[1]
+					                 * comm.info[i].i2j_ncell[2];
 					buffer_recv[i] = new double[ nrecv ]();
 					MPI_Sendrecv( buffer_send, nsend, MPI_DOUBLE, iproc, jproc, 
 					              buffer_recv[i], nrecv, MPI_DOUBLE, iproc, iproc, 
@@ -349,7 +368,9 @@ void class_greenfish::map2d( class_communication comm )
 // Resize arrays
 //----------------------------------------------------------------------------//
 	nrecv = comm.partition_recv[rank].ncell[0] 
-	      * comm.partition_recv[rank].ncell[1];
+	      * comm.partition_recv[rank].ncell[1] 
+	      * comm.partition_recv[rank].ncell[2];
+
 	if( rX ){ rhsX = new std::complex<double>[nrecv](); }
 	if( rY ){ rhsY = new std::complex<double>[nrecv](); }
 	if( rZ ){ rhsZ = new std::complex<double>[nrecv](); }
@@ -377,21 +398,27 @@ void class_greenfish::map2d( class_communication comm )
 		{
 			imin[0] = comm.info[i].i2j_min_recv[0];
 			imin[1] = comm.info[i].i2j_min_recv[1];
+			imin[2] = comm.info[i].i2j_min_recv[2];
 
 			imax[0] = comm.info[i].i2j_max_recv[0];
 			imax[1] = comm.info[i].i2j_max_recv[1];
+			imax[2] = comm.info[i].i2j_max_recv[2];
 
 			nx = comm.info[i].i2j_ncell_partition_recv[0];
+			ny = comm.info[i].i2j_ncell_partition_recv[1];
 		}
 		else if( rank == iproc && comm.info[i].nway > 1 )
 		{
 			imin[0] = comm.info[i].j2i_min_recv[0];
 			imin[1] = comm.info[i].j2i_min_recv[1];
+			imin[2] = comm.info[i].j2i_min_recv[2];
 
 			imax[0] = comm.info[i].j2i_max_recv[0];
 			imax[1] = comm.info[i].j2i_max_recv[1];
+			imax[2] = comm.info[i].j2i_max_recv[2];
 
 			nx = comm.info[i].j2i_ncell_partition_recv[0];
+			ny = comm.info[i].j2i_ncell_partition_recv[1];
 		}
 		else
 		{
@@ -404,55 +431,55 @@ void class_greenfish::map2d( class_communication comm )
 		if(pack)
 		{
 			k = 0;
-			for( q = imin[1]; q <= imax[1]; ++q )
+
+			for( s = imin[2]; s <= imax[2]; ++s )
 			{
-				for( p = imin[0]; p <= imax[0]; ++p )
+				sn = s * ny;
+				for( q = imin[1]; q <= imax[1]; ++q )
 				{
+					sqn = ( sn + q ) * nx;
+					for( p = imin[0]; p <= imax[0]; ++p )
+					{
+						pqs = sqn + p;
 
-					if( rX )
-					{
-						pq = q * nx + p;
-						rhsX[pq] = { buffer_recv[i][k], buffer_recv[i][k+1] };
-						k += 2;
-					}
-					if( rY )
-					{
-						pq = q * nx + p;
-						rhsY[pq] = { buffer_recv[i][k], buffer_recv[i][k+1] };
-						k += 2;
-					}
-					if( rZ )
-					{
-						pq = q * nx + p;
-						rhsZ[pq] = { buffer_recv[i][k], buffer_recv[i][k+1] };
-						k += 2;
-					}
-					if( lX )
-					{
-						pq = q * nx + p;
-						lhsX[pq] = { buffer_recv[i][k], buffer_recv[i][k+1] };
-						k += 2;
-					}
-					if( lY )
-					{
-						pq = q * nx + p;
-						lhsY[pq] = { buffer_recv[i][k], buffer_recv[i][k+1] };
-						k += 2;
-					}
-					if( lZ )
-					{
-						pq = q * nx + p;
-						lhsZ[pq] = { buffer_recv[i][k], buffer_recv[i][k+1] };
-						k += 2;
-					}
+						if( rX )
+						{
+							rhsX[pqs] = { buffer_recv[i][k], buffer_recv[i][k+1] };
+							k += 2;
+						}
+						if( rY )
+						{
+							rhsY[pqs] = { buffer_recv[i][k], buffer_recv[i][k+1] };
+							k += 2;
+						}
+						if( rZ )
+						{
+							rhsZ[pqs] = { buffer_recv[i][k], buffer_recv[i][k+1] };
+							k += 2;
+						}
+						if( lX )
+						{
+							lhsX[pqs] = { buffer_recv[i][k], buffer_recv[i][k+1] };
+							k += 2;
+						}
+						if( lY )
+						{
+							lhsY[pqs] = { buffer_recv[i][k], buffer_recv[i][k+1] };
+							k += 2;
+						}
+						if( lZ )
+						{
+							lhsZ[pqs] = { buffer_recv[i][k], buffer_recv[i][k+1] };
+							k += 2;
+						}
 
-					if( mG )
-					{
-						pq = q * nx + p;
-						mapG[pq] = { buffer_recv[i][k], buffer_recv[i][k+1] };
-						k += 2;
-					}
+						if( mG )
+						{
+							mapG[pqs] = { buffer_recv[i][k], buffer_recv[i][k+1] };
+							k += 2;
+						}
 
+					}
 				}
 			}
 

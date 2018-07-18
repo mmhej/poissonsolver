@@ -1,5 +1,9 @@
 #------------------------------------------------------------------------------#
-# Makefile
+#
+#  File:        makefile
+#
+#  Description: 
+#
 #------------------------------------------------------------------------------#
 PROGRAM  := unbounded2d
 
@@ -11,28 +15,29 @@ OBJ_DIR  := ./build
 default: $(PROGRAM)
 
 #------------------------------------------------------------------------------#
-# Path to libraries
+# Dynamic path to GreenFish library
 #------------------------------------------------------------------------------#
-OPENMPI  = /home/mmh/Programs/openmpi-2.1.1
-GREENLIB = /home/mmh/Development/greenfish
+GREENFISH = ./../../
 
 #------------------------------------------------------------------------------#
 # Flags and libraries for compiling
 #------------------------------------------------------------------------------#
-# c++ compiler
-CC       = mpic++
+# MPI c++ compiler
+CC = $(shell which mpic++)
+
+# OpenMPI library path
+OPENMPI = $(CC:%/bin/mpic++=%)
 
 # c++ compiler flags
-#CFLAGS   = --std=c++11 -Wall -O3 -g3
 CCFLAGS   = --std=c++11 -O3
 
 # Library flags
-LIBDIRS = -L$(GREENLIB)
+LIBDIRS = -L$(GREENFISH)
 
 LIBS = -lgreenfish
 
 # Include paths
-INCLDIRS = -I$(GREENLIB)/include -I$(OPENMPI)/include
+INCLDIRS = -I$(GREENFISH)/include -I$(OPENMPI)/include
 
 # Preprocessor compiler
 CPP = cpp
@@ -98,7 +103,7 @@ $(PROGRAM): $(OBJECTS)
 $(OBJ_DIR)/main.cpp:
 # $(SRC_DIR)/*.hpp
 $(OBJ_DIR)/main.o:\
-  $(GREENLIB)/*.a
+  $(GREENFISH)/*.a
 #A
 
 #$(OBJ_DIR)/class_array.cpp:\

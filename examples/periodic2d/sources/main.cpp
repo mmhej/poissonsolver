@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push2d( B, NULL, NULL, NULL, NULL, NULL);
+	green.push( B, NULL, NULL, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -183,11 +183,11 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	A  = new double[ncell[0] * ncell[1]]();
+	A    = new double[ncell[0] * ncell[1]]();
 	dAdX = new double[ncell[0] * ncell[1]]();
 	dAdY = new double[ncell[0] * ncell[1]]();
-	green.pull2d( B, NULL, NULL, A, NULL, NULL );
-//	green.pull2d( B, NULL, NULL, dAdX, dAdY, NULL );
+	green.pull( B, NULL, NULL, A, NULL, NULL );
+//	green.pull( B, NULL, NULL, dAdX, dAdY, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error

@@ -81,7 +81,7 @@ class class_greenfish
 //----------------------------------------------------------------------------//
 // Prototype private routines
 //----------------------------------------------------------------------------//
-		void map2d( class_communication );
+		void map( class_communication );
 		void greens2d( );
 
 	public:
@@ -108,8 +108,9 @@ class class_greenfish
 
 		void solve2d(  );
 
-		void push2d( double *, double *, double *, double *, double *, double * );
-		void pull2d( double *, double *, double *, double *, double *, double * );
+		void push( double *, double *, double *, double *, double *, double * );
+
+		void pull( double *, double *, double *, double *, double *, double * );
 
 };
 

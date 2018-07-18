@@ -1,7 +1,9 @@
 #------------------------------------------------------------------------------#
-# makefile
-#------------------------------------------------------------------------------#
-# <<HEADER>>
+#
+#  File:        makefile
+#
+#  Description: 
+#
 #------------------------------------------------------------------------------#
 LIBRARY  := libgreenfish.a
 
@@ -12,23 +14,16 @@ INC_DIR  := ./include
 DEFAULT: $(LIBRARY)
 
 #------------------------------------------------------------------------------#
-# Path to libraries
-#------------------------------------------------------------------------------#
-OPENMPI := /home/mmh/Programs/openmpi-2.1.1
-
-#------------------------------------------------------------------------------#
 # Flags and libraries for compiling
 #------------------------------------------------------------------------------#
-# C compiler
-CC      = mpic++
+# MPI c++ compiler
+CC = $(shell which mpic++)
+
+# OpenMPI library path
+OPENMPI := $(CC:%/bin/mpic++=%)
 
 # C compiler flags
 CCFLAGS  = --std=c++11 -O3
-
-# Library flags
-LIBDIRS = 
-
-LIBS = 
 
 # Include paths
 INCLDIRS = -I$(OBJ_DIR) -I$(INC_DIR) -I$(OPENMPI)/include
