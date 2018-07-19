@@ -62,10 +62,12 @@ int main(int argc, char* argv[])
 	double err, error;
 	double nrm, norm;
 
-	double * A;
-	double * B;
-	double * dAdX;
-	double * dAdY;
+	double * Ax;
+	double * Ay;
+	double * Az;
+	double * Bx;
+	double * By;
+	double * Bz;
 
 	double diffX, diffY;
 
@@ -128,10 +130,12 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Allocate fields
 //----------------------------------------------------------------------------//
-	A    = new double[ncell[0] * ncell[1]]();
-	B    = new double[ncell[0] * ncell[1]]();
-	dAdX = new double[ncell[0] * ncell[1]]();
-	dAdY = new double[ncell[0] * ncell[1]]();
+	Ax = new double[ncell[0] * ncell[1]]();
+	Ay = new double[ncell[0] * ncell[1]]();
+//	Az = new double[ncell[0] * ncell[1]]();
+	Bx = new double[ncell[0] * ncell[1]]();
+//	By = new double[ncell[0] * ncell[1]]();
+//	Bz = new double[ncell[0] * ncell[1]]();
 
 //----------------------------------------------------------------------------//
 // Initiate fields
@@ -148,11 +152,11 @@ int main(int argc, char* argv[])
 			r = sqrt(x*x + y*y);
 			if( r < r0 )
 			{
-				B[ij] = 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4);
+				Bx[ij] = 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4);
 			}
 			else
 			{
-				B[ij] = 0.0;
+				Bx[ij] = 0.0;
 			}
 		}
 	}
@@ -169,7 +173,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push( B, NULL, NULL, NULL, NULL, NULL);
+	green.push( Bx, NULL, NULL, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -192,7 +196,7 @@ int main(int argc, char* argv[])
 #endif
 
 //	green.pull( B, NULL, NULL, A, NULL, NULL );
-	green.pull( B, NULL, NULL, dAdX, dAdY, NULL );
+	green.pull( Bx, NULL, NULL, Ax, Ay, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error integral
@@ -215,29 +219,28 @@ int main(int argc, char* argv[])
 			if( r < r0 )
 			{
 // A
-//				err += dx[0]*dx[1]* pow( A[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2))) , 2);
+//				err += dx[0]*dx[1]* pow( Ax[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2))) , 2);
 //				nrm += dx[0]*dx[1]* pow( exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2))), 2 );
 
 // B
-//				err += dx[0]*dx[1]* pow( bump[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4)) ,2);
+//				err += dx[0]*dx[1]* pow( Bx[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4)) ,2);
 //				nrm += dx[0]*dx[1]* pow( 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4) ,2);
 
-// dAdX
-				err += dx[0]*dx[1]* pow( dAdX[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
+// Ax
+				err += dx[0]*dx[1]* pow( Ax[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
 				nrm += dx[0]*dx[1]* pow( - 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
 
-// dAdY
-				err += dx[0]*dx[1]* pow( dAdY[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
+// Ay
+				err += dx[0]*dx[1]* pow( Ay[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
 				nrm += dx[0]*dx[1]* pow( - 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
 
 			}
 			else
 			{
 
-//				err += dx[0]*dx[1]* pow( A[ij], 2);
-//				err += dx[0]*dx[1]* pow( B[ij], 2);
-				err += dx[0]*dx[1]* pow( dAdX[ij] , 2);
-				err += dx[0]*dx[1]* pow( dAdY[ij] , 2);
+//				err += dx[0]*dx[1]* pow( Bx[ij], 2);
+				err += dx[0]*dx[1]* pow( Ax[ij] , 2);
+				err += dx[0]*dx[1]* pow( Ay[ij] , 2);
 			}
 
 
@@ -287,24 +290,23 @@ int main(int argc, char* argv[])
 			if( r < r0 )
 			{
 // A
-//				err = A[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2)));
+//				err = Ax[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2)));
 
 // B
-//				err = B[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4));
+//				err = Bx[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4));
 
 // dAdX
-				diffX = dAdX[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
+				diffX = Ax[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
 
 // dAdY
-				diffY = dAdY[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
+				diffY = Ay[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
 
 			}
 			else
 			{
-//				err = A[ij];
-//				err = B[ij];
-				diffX = dAdX[ij];
-				diffY = dAdY[ij];
+//				err = Bx[ij];
+				diffX = Ax[ij];
+				diffY = Ay[ij];
 			}
 
 			err = sqrt( pow(diffX,2) + pow(diffY,2) );

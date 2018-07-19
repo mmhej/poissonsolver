@@ -83,6 +83,7 @@ class class_greenfish
 //----------------------------------------------------------------------------//
 		void map( class_communication );
 		void greens2d( );
+		void greens3d( );
 
 	public:
 //----------------------------------------------------------------------------//
@@ -107,9 +108,9 @@ class class_greenfish
 		void setup3d( int [3], int [3], double [3] );
 
 		void solve2d(  );
+		void solve3d(  );
 
 		void push( double *, double *, double *, double *, double *, double * );
-
 		void pull( double *, double *, double *, double *, double *, double * );
 
 };

@@ -25,14 +25,14 @@ void class_greenfish::greens3d(  )
 // Variables
 //----------------------------------------------------------------------------//
 	int     nproc, rank;
-	int     i, j, jn, ij;
+	int     i, j, k, kn, kjn, ijk;
 	int     nfft;
 	int     ncell[3];
 	int     icell[3];
 	double  dx[3];
 	double  xmin[3];
 
-	double  x,y,r,rho;
+	double  x,y,z,r,rho;
 	double  sigma;
 	double  dk;
 
@@ -65,16 +65,18 @@ void class_greenfish::greens3d(  )
 //============================================================================//
 	ncell[0] = ypen_ext[rank].ncell[0];
 	ncell[1] = ypen_ext[rank].ncell[1];
+	ncell[2] = ypen_ext[rank].ncell[2];
 
 	icell[0] = ypen_ext[rank].icell[0];
 	icell[1] = ypen_ext[rank].icell[1];
+	icell[2] = ypen_ext[rank].icell[2];
 
 	nfft = xpen_ext[rank].ncell[0];
 
-	dk = 1.0/( double( nfft ) * dx[0] );
+	dk  = 1.0/( double( nfft ) * dx[0] );
 	ikX = new std::complex<double>[ncell[0]]();
 
-	for (i = 0; i < ncell[0]; ++i )
+	for(i = 0; i < ncell[0]; ++i )
 	{
 		if( 2*(icell[0]+i) < nfft )
 		{
@@ -86,10 +88,10 @@ void class_greenfish::greens3d(  )
 		}
 	}
 
-	dk = 1.0/( double(ncell[1]) * dx[1] );
+	dk  = 1.0/( double(ncell[1]) * dx[1] );
 	ikY = new std::complex<double>[ncell[1]]();
 
-	for (j = 0; j < ncell[1]; ++j )
+	for(j = 0; j < ncell[1]; ++j )
 	{
 		if( 2*j < ncell[1] )
 		{
@@ -101,6 +103,20 @@ void class_greenfish::greens3d(  )
 		}
 	}
 
+	dk  = 1.0/( double(ncell[2]) * dx[2] );
+	ikZ = new std::complex<double>[ncell[2]]();
+
+	for(k = 0; k < ncell[2]; ++k )
+	{
+		if( 2*k < ncell[2] )
+		{
+			ikZ[k] = {0.0, 2.0 * pi * double(k) * dk};
+		}
+		else
+		{
+			ikZ[k] = {0.0, 2.0 * pi * double(k-ncell[2]) * dk};
+		}
+	}
 
 //============================================================================//
 // Create Greens functions
@@ -109,7 +125,7 @@ void class_greenfish::greens3d(  )
 //============================================================================//
 // Unbounded domain
 //============================================================================//
-	if(domain_bc[0] == 0 && domain_bc[1] == 0)
+	if(domain_bc[0] == 0 && domain_bc[1] == 0 && domain_bc[2] == 0)
 	{
 //----------------------------------------------------------------------------//
 // Construct pencils
@@ -121,65 +137,80 @@ void class_greenfish::greens3d(  )
 //----------------------------------------------------------------------------//
 		ncell[0] = xpen_ext[rank].ncell[0];
 		ncell[1] = xpen_ext[rank].ncell[1];
+		ncell[2] = xpen_ext[rank].ncell[2];
 
 		icell[0] = xpen_ext[rank].icell[0];
 		icell[1] = xpen_ext[rank].icell[1];
+		icell[2] = xpen_ext[rank].icell[2];
 
 		dx[0] = xpen_ext[rank].dx[0];
 		dx[1] = xpen_ext[rank].dx[1];
+		dx[2] = xpen_ext[rank].dx[2];
 
 		pen.resize( ncell[0] );
 
-		mapG = new std::complex<double>[ncell[0]*ncell[1]];
+		mapG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
 
 		xmin[0] = - ( 0.5 * double( xpen_ext[rank].ncell[0] ) )*dx[0];
 		xmin[1] = - ( 0.5 * double( ypen_ext[rank].ncell[1] ) )*dx[1];
+		xmin[2] = - ( 0.5 * double( ypen_ext[rank].ncell[2] ) )*dx[2];
+
 
 		sigma = dx[0]/pi; // Spectral
 //		sigma = 2.0*dx[0]; // super-Gaussian
 		C = log(2.0*sigma) - gamma;
 
-		for (j = 0; j < ncell[1]; ++j )
+		for (k = 0; k < ncell[2]; ++k )
 		{
-			jn = j * ncell[0];
-			y  = xmin[1] + double( icell[1] + j )*dx[1];
-
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Store fft mesh array in x-pencil
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-			for(i = 0; i < ncell[0]; ++i )
+			kn = k * ncell[1];
+			z  = xmin[2] + double( icell[2] + k )*dx[2];
+			for (j = 0; j < ncell[1]; ++j )
 			{
-				x = xmin[0] + double( icell[0] + i )*dx[0];
-				r = sqrt(x*x + y*y);
+				kjn = (kn + j) * ncell[0];
+				y   = xmin[1] + double( icell[1] + j )*dx[1];
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in x-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				for(i = 0; i < ncell[0]; ++i )
+				{
+					x   = xmin[0] + double( icell[0] + i )*dx[0];
 
+					r = sqrt(x*x + y*y + z*z);
 
 // 10th order super-Gaussian
 /*
-				rho = r/sigma;
-				if(r > 0.25*dx[0])
-				{
-					pen.X[i] = {- (log(r) + 0.5 * exp_int(1,0.5*pow(rho,2)) - (c1 + c2 * pow(rho,2) + c3 * pow(rho,4) + c4 * pow(rho,6) ) * exp(-0.5 * pow(rho,2)) ) * c_1_2pi * dx[0]*dx[1], 0.0};
-				}
-				else
-				{
-					pen.X[i] = {( 0.5*gamma - log(c_sqrt2 * sigma) + c1 )*c_1_2pi * dx[0]*dx[1], 0.0};
-				}
+					rho = r/sigma;
+					if(r > 0.25*dx[0])
+					{
+						pen.X[i] = {0.0 * dx[0]*dx[1]*dx[2], 0.0};
+					}
+					else
+					{
+						pen.X[i] = {0.0 * dx[0]*dx[1]*dx[2], 0.0};
+					}
 */
 
 // Spectral
-				rho = r/sigma;
-				pen.X[i] = {- c_1_2pi * ( bessel_int_J0( rho ) + C ) * dx[0]*dx[1], 0.0};
+					rho = r/sigma;
+					pen.X[i] = {0.0 * dx[0]*dx[1]*dx[2], 0.0};
+				}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// FFT y-pencils
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				pen.fft_shift( );
+				pen.fft( );
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store array
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				for (i = 0; i < ncell[0]; ++i )
+				{
+					ijk = kjn + i;
+					mapG[ijk] = pen.X[i];
+				}
+
 			}
-
-			pen.fft_shift( );
-			pen.fft( );
-
-			for (i = 0; i < ncell[0]; ++i )
-			{
-				ij = jn + i;
-				mapG[ij] = pen.X[i];
-			}
-
 		}
 
 //----------------------------------------------------------------------------//
@@ -192,37 +223,76 @@ void class_greenfish::greens3d(  )
 //----------------------------------------------------------------------------//
 		ncell[0] = ypen_ext[rank].ncell[0];
 		ncell[1] = ypen_ext[rank].ncell[1];
+		ncell[1] = ypen_ext[rank].ncell[2];
 
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		rhsG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
 		pen.resize( ncell[1] );
 
-		for (i = 0; i < ncell[0]; ++i )
+		for (k = 0; k < ncell[2]; ++k )
 		{
-
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Store fft mesh array in y-pencil (fft-shifted)
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-			for(j = 0; j < ncell[1]; ++j )
+			kn = k * ncell[1];
+			for (i = 0; i < ncell[0]; ++i )
 			{
-				ij = j * ncell[0] + i;
-				pen.X[j] = mapG[ij];
-			}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in y-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				for(j = 0; j < ncell[1]; ++j )
+				{
+					ijk = (kn + j) * ncell[0] + i;
+					pen.X[j] = mapG[ijk];
+				}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // FFT y-pencils
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-			pen.fft_shift( );
-			pen.fft( );
+				pen.fft_shift( );
+				pen.fft( );
 
 //----------------------------------------------------------------------------//
 // Store Fourier space Greens function
 //----------------------------------------------------------------------------//
-			for (j = 0; j < ncell[1]; ++j )
-			{
-				ij = j * ncell[0] + i;
-				rhsG[ij] = pen.X[j];
-			}
+				for (j = 0; j < ncell[1]; ++j )
+				{
+					ijk = (kn + j) * ncell[0] + i;
+					rhsG[ijk] = pen.X[j];
+				}
 
+			}
+		}
+
+
+//----------------------------------------------------------------------------//
+// FFT z-pencils
+//----------------------------------------------------------------------------//
+		pen.resize( ncell[2] );
+		for (i = 0; i < ncell[0]; ++i )
+		{
+			for(j = 0; j < ncell[1]; ++j )
+			{
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in z-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				for(k = 0; k < ncell[2]; ++k )
+				{
+					ijk = (k * ncell[1] + j) * ncell[0] + i;
+					pen.X[k] = mapG[ijk];
+				}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// FFT z-pencils
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				pen.fft_shift( );
+				pen.fft( );
+
+//----------------------------------------------------------------------------//
+// Store Fourier space Greens function
+//----------------------------------------------------------------------------//
+				for(k = 0; k < ncell[2]; ++k )
+				{
+					ijk = (k * ncell[1] + j) * ncell[0] + i;
+					rhsG[ijk] = pen.X[k];
+				}
+			}
 		}
 
 //----------------------------------------------------------------------------//
@@ -235,7 +305,7 @@ void class_greenfish::greens3d(  )
 //============================================================================//
 // Periodic domain
 //============================================================================//
-	else if(domain_bc[0] == 1 && domain_bc[1] == 1)
+	else
 	{
 
 //----------------------------------------------------------------------------//
@@ -243,186 +313,50 @@ void class_greenfish::greens3d(  )
 //----------------------------------------------------------------------------//
 		ncell[0] = ypen_ext[rank].ncell[0];
 		ncell[1] = ypen_ext[rank].ncell[1];
+		ncell[2] = ypen_ext[rank].ncell[2];
 
 		icell[0] = ypen_ext[rank].icell[0];
 		icell[1] = ypen_ext[rank].icell[1];
+		icell[2] = ypen_ext[rank].icell[2];
 
 		dx[0]    = ypen_ext[rank].dx[0];
 		dx[1]    = ypen_ext[rank].dx[1];
+		dx[2]    = ypen_ext[rank].dx[2];
 
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		rhsG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
 
-		for(j = 0; j < ncell[1]; ++j )
+		for (k = 0; k < ncell[2]; ++k )
 		{
-			jn = j * ncell[0];
-			for (i = 0; i < ncell[0]; ++i )
+			kn = k * ncell[1];
+			for (j = 0; j < ncell[1]; ++j )
 			{
-				ij = jn + i;
-				if( icell[0] == 0 && i == 0 && j == 0 )
+				kjn = (kn + j) * ncell[0];
+				for(i = 0; i < ncell[0]; ++i )
 				{
-					rhsG[ij] = {0.0,0.0};
-				}
-				else
-				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+					ijk = kjn + i;
+
+					if( icell[0] == 0 && i == 0 && j == 0  && k == 0 )
+					{
+						rhsG[ijk] = {0.0,0.0};
+					}
+					else
+					{
+						rhsG[ijk] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] + ikZ[k]*ikZ[k] );
+					}
+
 				}
 			}
 		}
 
 	}
-//============================================================================//
-// Periodic-unbounded domain
-//============================================================================//
-	else if(domain_bc[0] == 1 && domain_bc[1] == 0)
-	{
-
-		ncell[0] = ypen_ext[rank].ncell[0];
-		ncell[1] = ypen_ext[rank].ncell[1];
-
-		icell[0] = ypen_ext[rank].icell[0];
-		icell[1] = ypen_ext[rank].icell[1];
-
-		dx[0]    = ypen_ext[rank].dx[0];
-		dx[1]    = ypen_ext[rank].dx[1];
-
-		xmin[0] = - ( 0.5 * double( xpen_ext[rank].ncell[0] ) )*dx[0];
-		xmin[1] = - ( 0.5 * double( ypen_ext[rank].ncell[1] ) )*dx[1];
-
-//----------------------------------------------------------------------------//
-// Calculate 1D free-space Greens function and Fourier transform it
-//----------------------------------------------------------------------------//
-		class_pencil pen(true,false,false);
-
-		pen.resize( ncell[1] );
-
-		sigma = dx[1]/pi; // Spectral
-		C = sigma/pi;
-		for(j = 0; j < ncell[1]; ++j )
-		{
-			y = xmin[1] + double( j )*dx[1];
-
-// Spectral
-			rho = std::abs(y)/sigma;
-			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[1], 0.0};
-		}
-
-		pen.fft_shift( );
-		pen.fft( );
-
-//----------------------------------------------------------------------------//
-// Construct Greens function in Fourier space on y-pencil partition
-//----------------------------------------------------------------------------//
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
-		for(j = 0; j < ncell[1]; ++j )
-		{
-			jn = j * ncell[0];
-			for (i = 0; i < ncell[0]; ++i )
-			{
-				ij = jn + i;
-
-				if( icell[0] == 0 && i == 0 )
-				{
-					rhsG[ij] = pen.X[j];
-				}
-				else
-				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
-				}
 
 /*
-				if( icell[0] == 0 && i == 0 && j == 0 )
-				{
-					rhsG[ij] = {0.0,0.0};
-				}
-				else
-				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
-				}
-*/
-
-			}
-		}
-
-	}
-//============================================================================//
-// Unbounded-periodic domain
-//============================================================================//
-	else if(domain_bc[0] == 0 && domain_bc[1] == 1)
-	{
-
-		ncell[0] = ypen_ext[rank].ncell[0];
-		ncell[1] = ypen_ext[rank].ncell[1];
-
-		icell[0] = ypen_ext[rank].icell[0];
-		icell[1] = ypen_ext[rank].icell[1];
-
-		dx[0]    = ypen_ext[rank].dx[0];
-		dx[1]    = ypen_ext[rank].dx[1];
-
-		nfft = xpen_ext[rank].ncell[0];
-		xmin[0] = - ( 0.5 * double( nfft ) )*dx[0];
-
-//----------------------------------------------------------------------------//
-// Calculate 1D free-space Greens function and Fourier transform it
-//----------------------------------------------------------------------------//
-		class_pencil pen(true,false,false);
-
-		pen.resize( nfft );
-
-		sigma = dx[0]/pi; // Spectral
-		C = sigma/pi;
-		for(i = 0; i < nfft; ++i )
-		{
-			x = xmin[0] + double( i )*dx[0];
-
-// Spectral
-			rho = std::abs(x)/sigma;
-			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[0], 0.0};
-		}
-
-		pen.fft_shift( );
-		pen.fft( );
-
-//----------------------------------------------------------------------------//
-// Construct Greens function in Fourier space on y-pencil partition
-//----------------------------------------------------------------------------//
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
-		for(j = 0; j < ncell[1]; ++j )
-		{
-			jn = j * ncell[0];
-			for (i = 0; i < ncell[0]; ++i )
-			{
-				ij = jn + i;
-
-				if( j == 0 )
-				{
-					rhsG[ij] = pen.X[icell[0] + i];
-				}
-				else
-				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
-				}
-
-/*
-				if( icell[0] == 0 && i == 0 && j == 0 )
-				{
-					rhsG[ij] = {0.0,0.0};
-				}
-				else
-				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
-				}
-*/
-
-			}
-		}
-
-	}
 	else
 	{
 		std::cerr << " [greenfish.solve]: Boundary condition configuration unknown."
 		          << std::endl;
 	}
+*/
 
 //----------------------------------------------------------------------------//
 // Return

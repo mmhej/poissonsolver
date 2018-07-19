@@ -22,13 +22,13 @@
 #include "greenfish/special_functions.cpp"
 
 #include "greenfish/greens2d.cpp"
-//#include "greenfish/greens3d.cpp"
+#include "greenfish/greens3d.cpp"
 
 #include "greenfish/setup2d.cpp"
 #include "greenfish/setup3d.cpp"
 
 #include "greenfish/solve2d.cpp"
-//#include "greenfish/solve3d.cpp"
+#include "greenfish/solve3d.cpp"
 
 #include "greenfish/push.cpp"
 #include "greenfish/pull.cpp"

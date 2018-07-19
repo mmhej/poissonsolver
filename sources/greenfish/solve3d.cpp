@@ -17,7 +17,7 @@ void class_greenfish::solve3d(  )
 // Variables
 //----------------------------------------------------------------------------//
 	int     nproc, rank;
-	int     i, j, jn, ij;
+	int     i, j, k, kn, kjn, ijk;
 	int     nfft;
 	int     ncell[3];
 
@@ -47,6 +47,7 @@ void class_greenfish::solve3d(  )
 		{
 			lX = true;
 			lY = true;
+			lZ = true;
 		}
 		else
 		{
@@ -58,7 +59,7 @@ void class_greenfish::solve3d(  )
 	}
 	else if(lhs_div)
 	{
-		if(rX && rY)
+		if(rX && rY && rZ)
 		{
 			lX = true;
 		}
@@ -72,10 +73,11 @@ void class_greenfish::solve3d(  )
 	}
 	else if(lhs_curl)
 	{
-		if(rZ)
+		if(rX && rY && rZ)
 		{
 			lX = true;
 			lY = true;
+			lZ = true;
 		}
 		else
 		{
@@ -112,75 +114,136 @@ void class_greenfish::solve3d(  )
 //----------------------------------------------------------------------------//
 	ncell[0] = xpen[rank].ncell[0];
 	ncell[1] = xpen[rank].ncell[1];
+	ncell[1] = xpen[rank].ncell[2];
 
 	pen_rhs.resize( ncell[0] );
 
-	for (j = 0; j < ncell[1]; ++j )
+	for (k = 0; k < ncell[2]; ++k )
 	{
-		jn = j * ncell[0];
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Store fft mesh array in x-pencil
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-		for(i = 0; i < ncell[0]; ++i )
+		kn = k * ncell[1];
+		for (j = 0; j < ncell[1]; ++j )
 		{
-			ij = jn + i;
-			if( rX )
+			kjn = (kn + j) * ncell[0];
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in x-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for(i = 0; i < ncell[0]; ++i )
 			{
-				pen_rhs.X[i] = rhsX[ij];
+				ijk = kjn + i;
+				if( rX )
+				{
+					pen_rhs.X[i] = rhsX[ijk];
+				}
+				if( rY )
+				{
+					pen_rhs.Y[i] = rhsY[ijk];
+				}
+				if( rZ )
+				{
+					pen_rhs.Z[i] = rhsZ[ijk];
+				}
 			}
-			if( rY )
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Fourier transform pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			pen_rhs.fft( );
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store pencil in fft array
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for (i = 0; i < ncell[0]; ++i )
 			{
-				pen_rhs.Y[i] = rhsY[ij];
-			}
-			if( rZ )
-			{
-				pen_rhs.Z[i] = rhsZ[ij];
+				ijk = kjn + i;
+				if( rX )
+				{
+					rhsX[ijk] = pen_rhs.X[i];
+				}
+				if( rY )
+				{
+					rhsY[ijk] = pen_rhs.Y[i];
+				}
+				if( rZ )
+				{
+					rhsZ[ijk] = pen_rhs.Z[i];
+				}
 			}
 		}
-		pen_rhs.fft( );
-		for (i = 0; i < ncell[0]; ++i )
-		{
-			ij = jn + i;
-			if( rX )
-			{
-				rhsX[ij] = pen_rhs.X[i];
-			}
-			if( rY )
-			{
-				rhsY[ij] = pen_rhs.Y[i];
-			}
-			if( rZ )
-			{
-				rhsZ[ij] = pen_rhs.Z[i];
-			}
-		}
-
 	}
 
 //----------------------------------------------------------------------------//
-// Map to y-pencils
+// Map to y-pencil partition
 //----------------------------------------------------------------------------//
 	map( xpen2ypen );
 
 //----------------------------------------------------------------------------//
-// FFT y-pencils and perform Fourier space operations
+// FFT y-pencils
 //----------------------------------------------------------------------------//
 	ncell[0] = ypen[rank].ncell[0];
 	ncell[1] = ypen[rank].ncell[1];
+	ncell[2] = ypen[rank].ncell[2];
 
-	icell[0] = ypen[rank].icell[0];
-	icell[1] = ypen[rank].icell[1];
+	pen_rhs.resize( ncell[1] );
 
-	dx[0]    = ypen[rank].dx[0];
-	dx[1]    = ypen[rank].dx[1];
-
-	if(domain_bc[1] == 0)
+	for (k = 0; k < ncell[2]; ++k )
 	{
-		nfft = 2*ncell[1];
+		kn = k * ncell[1];
+		for (i = 0; i < ncell[0]; ++i )
+		{
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in y-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for(j = 0; j < ncell[1]; ++j )
+			{
+				ijk = (kn + j) * ncell[0] + i;
+				if( rX )
+				{
+					pen_rhs.X[j] = rhsX[ijk];
+				}
+				if( rY )
+				{
+					pen_rhs.Y[j] = rhsY[ijk];
+				}
+				if( rZ )
+				{
+					pen_rhs.Z[j] = rhsZ[ijk];
+				}
+			}
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Fourier transform pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			pen_rhs.fft( );
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store pencil in fft array
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for (j = 0; j < ncell[1]; ++j )
+			{
+				ijk = (kn + j) * ncell[0] + i;
+				if( rX )
+				{
+					rhsX[ijk] = pen_rhs.X[j];
+				}
+				if( rY )
+				{
+					rhsY[ijk] = pen_rhs.Y[j];
+				}
+				if( rZ )
+				{
+					rhsZ[ijk] = pen_rhs.Z[j];
+				}
+			}
+		}
+	}
+
+
+//----------------------------------------------------------------------------//
+// FFT z-pencils and perform Fourier space operations
+//----------------------------------------------------------------------------//
+	if(domain_bc[2] == 0)
+	{
+		nfft = 2*ncell[2];
 	}
 	else
 	{
-		nfft = ncell[1];
+		nfft = ncell[2];
 	}
 
 	pen_rhs.resize( nfft );
@@ -188,148 +251,248 @@ void class_greenfish::solve3d(  )
 
 	if( lX )
 	{
-		lhsX = new std::complex<double>[ncell[0]*ncell[1]]();
+		lhsX = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]]();
 	}
 	if( lY )
 	{
-		lhsY = new std::complex<double>[ncell[0]*ncell[1]]();
+		lhsY = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]]();
 	}
 	if( lZ )
 	{
-		lhsZ = new std::complex<double>[ncell[0]*ncell[1]]();
+		lhsZ = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]]();
 	}
 
 
 	for (i = 0; i < ncell[0]; ++i )
 	{
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Store fft mesh array in y-pencil
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 		for(j = 0; j < ncell[1]; ++j )
 		{
-			ij = j * ncell[0] + i;
-			if( rX )
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in z-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for(k = 0; k < ncell[2]; ++k )
 			{
-				pen_rhs.X[j] = rhsX[ij];
-			}
-			if( rY )
-			{
-				pen_rhs.Y[j] = rhsY[ij];
-			}
-			if( rZ )
-			{
-				pen_rhs.Z[j] = rhsZ[ij];
-			}
-		}
-// Zero-padding
-		if( nfft > ncell[1] )
-		{
-			for(j = ncell[1]; j < nfft; ++j )
-			{
+				ijk = (k * ncell[1] + j) * ncell[0] + i;
+
 				if( rX )
 				{
-					pen_rhs.X[j] = {0.0,0.0};
+					pen_rhs.X[k] = rhsX[ijk];
 				}
 				if( rY )
 				{
-					pen_rhs.Y[j] = {0.0,0.0};
+					pen_rhs.Y[k] = rhsY[ijk];
 				}
 				if( rZ )
 				{
-					pen_rhs.Z[j] = {0.0,0.0};
+					pen_rhs.Z[k] = rhsZ[ijk];
 				}
 			}
-		}
+// Zero-padding
+			if( nfft > ncell[2] )
+			{
+				for(k = ncell[2]; k < nfft; ++k )
+				{
+					if( rX )
+					{
+						pen_rhs.X[k] = {0.0,0.0};
+					}
+					if( rY )
+					{
+						pen_rhs.Y[k] = {0.0,0.0};
+					}
+					if( rZ )
+					{
+						pen_rhs.Z[k] = {0.0,0.0};
+					}
+				}
+			}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // FFT y-pencils
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-		pen_rhs.fft( );
+			pen_rhs.fft( );
 
 //----------------------------------------------------------------------------//
 // Perform Fourier space operations
 //----------------------------------------------------------------------------//
-		for (j = 0; j < nfft; ++j )
-		{
-			ij = j * ncell[0] + i;
+			for (k = 0; k < nfft; ++k )
+			{
+				ijk = (k * ncell[1] + j) * ncell[0] + i;
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Do convolution
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-			if(lhs_grad)
-			{
-				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
-				pen_lhs.Y[j] = ikY[j] * rhsG[ij] * pen_rhs.X[j];
-			}
-			else if(lhs_div)
-			{
-				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
-				             + ikY[j] * rhsG[ij] * pen_rhs.Y[j];
-			}
-			else if(lhs_curl)
-			{
-				pen_lhs.X[j] =   ikY[j] * rhsG[ij] * pen_rhs.Z[j];
-				pen_lhs.Y[j] = - ikX[i] * rhsG[ij] * pen_rhs.Z[j];
-			}
-			else
-			{
-				if( lX )
+				if(lhs_grad)
 				{
-					pen_lhs.X[j] = rhsG[ij] * pen_rhs.X[j];
+					pen_lhs.X[k] = ikX[i] * rhsG[ijk] * pen_rhs.X[k];
+					pen_lhs.Y[k] = ikY[j] * rhsG[ijk] * pen_rhs.X[k];
 				}
-				if( lY )
+				else if(lhs_div)
 				{
-					pen_lhs.Y[j] = rhsG[ij] * pen_rhs.Y[j];
+					pen_lhs.X[k] = rhsG[ijk] * ( ikX[i] * pen_rhs.X[k]
+					                           + ikY[j] * pen_rhs.Y[k]
+					                           + ikZ[k] * pen_rhs.Z[k] );
 				}
-				if( lZ )
+				else if(lhs_curl)
 				{
-					pen_lhs.Z[j] = rhsG[ij] * pen_rhs.Z[j];
+					pen_lhs.X[k] = rhsG[ijk] * ( ikY[j] * pen_rhs.Z[k]
+					                           - ikZ[k] * pen_rhs.Y[k] );
+					pen_lhs.Y[k] = rhsG[ijk] * ( ikZ[k] * pen_rhs.X[k]
+					                           - ikX[i] * pen_rhs.Z[k] );
+					pen_lhs.Z[k] = rhsG[ijk] * ( ikX[i] * pen_rhs.Y[k]
+					                           - ikY[j] * pen_rhs.X[k] );
 				}
+				else
+				{
+					if( lX )
+					{
+						pen_lhs.X[k] = rhsG[ijk] * pen_rhs.X[k];
+					}
+					if( lY )
+					{
+						pen_lhs.Y[k] = rhsG[ijk] * pen_rhs.Y[k];
+					}
+					if( lZ )
+					{
+						pen_lhs.Z[k] = rhsG[ijk] * pen_rhs.Z[k];
+					}
+				}
+
 			}
 
-		}
-
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// IFFT y-pencils
+// IFFT z-pencils
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-		pen_rhs.ifft( );
-		pen_lhs.ifft( );
+			pen_rhs.ifft( );
+			pen_lhs.ifft( );
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Store solution
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-		for (j = 0; j < ncell[1]; ++j )
+			for (k = 0; k < ncell[2]; ++k )
+			{
+				ijk = (k * ncell[1] + j) * ncell[0] + i;
+
+				if( rX )
+				{
+					rhsX[ijk] = pen_rhs.X[k]/(double)nfft;
+				}
+				if( rY )
+				{
+					rhsY[ijk] = pen_rhs.Y[k]/(double)nfft;
+				}
+				if( rZ )
+				{
+					rhsZ[ijk] = pen_rhs.Z[k]/(double)nfft;
+				}
+
+				if( lX )
+				{
+					lhsX[ijk] = pen_lhs.X[k]/(double)nfft;
+				}
+				if( lY )
+				{
+					lhsY[ijk] = pen_lhs.Y[k]/(double)nfft;
+				}
+				if( lZ )
+				{
+					lhsZ[ijk] = pen_lhs.Z[k]/(double)nfft;
+				}
+
+			}
+		}
+	}
+
+
+//----------------------------------------------------------------------------//
+// IFFT y-pencils
+//----------------------------------------------------------------------------//
+	pen_rhs.resize( ncell[1] );
+	pen_lhs.resize( ncell[1] );
+
+	for (k = 0; k < ncell[2]; ++k )
+	{
+		kn = k * ncell[1];
+		for (i = 0; i < ncell[0]; ++i )
 		{
-			ij = j * ncell[0] + i;
-			if( rX )
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in y-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for(j = 0; j < ncell[1]; ++j )
 			{
-				rhsX[ij] = pen_rhs.X[j]/(double)nfft;
-			}
-			if( rY )
-			{
-				rhsY[ij] = pen_rhs.Y[j]/(double)nfft;
-			}
-			if( rZ )
-			{
-				rhsZ[ij] = pen_rhs.Z[j]/(double)nfft;
+				ijk = (kn + j) * ncell[0] + i;
+
+				if( rX )
+				{
+					pen_rhs.X[j] = rhsX[ijk];
+				}
+				if( rY )
+				{
+					pen_rhs.Y[j] = rhsY[ijk];
+				}
+				if( rZ )
+				{
+					pen_rhs.Z[j] = rhsZ[ijk];
+				}
+
+				if( lX )
+				{
+					pen_lhs.X[j] = lhsX[ijk];
+				}
+				if( lY )
+				{
+					pen_lhs.Y[j] = lhsY[ijk];
+				}
+				if( lZ )
+				{
+					pen_lhs.Z[j] = lhsZ[ijk];
+				}
 			}
 
-			if( lX )
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Perform ifft
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			pen_rhs.ifft( );
+			pen_lhs.ifft( );
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store fft field
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for(j = 0; j < ncell[1]; ++j )
 			{
-				lhsX[ij] = pen_lhs.X[j]/(double)nfft;
-			}
-			if( lY )
-			{
-				lhsY[ij] = pen_lhs.Y[j]/(double)nfft;
-			}
-			if( lZ )
-			{
-				lhsZ[ij] = pen_lhs.Z[j]/(double)nfft;
+				ijk = (kn + j) * ncell[0] + i;
+
+				if( rX )
+				{
+					rhsX[ijk] = pen_rhs.X[j]/(double)ncell[1];
+				}
+				if( rY )
+				{
+					rhsY[ijk] = pen_rhs.Y[j]/(double)ncell[1];
+				}
+				if( rZ )
+				{
+					rhsZ[ijk] = pen_rhs.Z[j]/(double)ncell[1];
+				}
+
+				if( lX )
+				{
+					lhsX[ijk] = pen_lhs.X[j]/(double)ncell[1];
+				}
+				if( lY )
+				{
+					lhsY[ijk] = pen_lhs.Y[j]/(double)ncell[1];
+				}
+				if( lZ )
+				{
+					lhsZ[ijk] = pen_lhs.Z[j]/(double)ncell[1];
+				}
 			}
 
 		}
-
 	}
+
 
 //----------------------------------------------------------------------------//
 // Map to x-pencils
@@ -341,88 +504,92 @@ void class_greenfish::solve3d(  )
 //----------------------------------------------------------------------------//
 	ncell[0] = xpen[rank].ncell[0];
 	ncell[1] = xpen[rank].ncell[1];
+	ncell[2] = xpen[rank].ncell[2];
 
 	pen_rhs.resize( ncell[0] );
 	pen_lhs.resize( ncell[0] );
 
-	for (j = 0; j < ncell[1]; ++j )
+	for (k = 0; k < ncell[2]; ++k )
 	{
-		jn = j * ncell[0];
-
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Store fft mesh array in x-pencil
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-		for (i = 0; i < ncell[0]; ++i )
+		kn = k * ncell[1];
+		for (j = 0; j < ncell[1]; ++j )
 		{
-			ij = jn + i;
-			if( rX )
+			kjn = (kn + j) * ncell[0];
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Store mesh array in x-pencil
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			for(i = 0; i < ncell[0]; ++i )
 			{
-				pen_rhs.X[i] = rhsX[ij];
-			}
-			if( rY )
-			{
-				pen_rhs.Y[i] = rhsY[ij];
-			}
-			if( rZ )
-			{
-				pen_rhs.Z[i] = rhsZ[ij];
-			}
+				ijk = kjn + i;
 
-			if( lX )
-			{
-				pen_lhs.X[i] = lhsX[ij];
-			}
-			if( lY )
-			{
-				pen_lhs.Y[i] = lhsY[ij];
-			}
-			if( lZ )
-			{
-				pen_lhs.Z[i] = lhsZ[ij];
-			}
+				if( rX )
+				{
+					pen_rhs.X[i] = rhsX[ijk];
+				}
+				if( rY )
+				{
+					pen_rhs.Y[i] = rhsY[ijk];
+				}
+				if( rZ )
+				{
+					pen_rhs.Z[i] = rhsZ[ijk];
+				}
 
-		}
+				if( lX )
+				{
+					pen_lhs.X[i] = lhsX[ijk];
+				}
+				if( lY )
+				{
+					pen_lhs.Y[i] = lhsY[ijk];
+				}
+				if( lZ )
+				{
+					pen_lhs.Z[i] = lhsZ[ijk];
+				}
+			}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Perform ifft
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-		pen_rhs.ifft( );
-		pen_lhs.ifft( );
+			pen_rhs.ifft( );
+			pen_lhs.ifft( );
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Store fft field
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-		for (i = 0; i < ncell[0]; ++i )
-		{
-			ij = jn + i;
-			if( rX )
+			for (i = 0; i < ncell[0]; ++i )
 			{
-				rhsX[ij] = pen_rhs.X[i]/(double)ncell[0];
-			}
-			if( rY )
-			{
-				rhsY[ij] = pen_rhs.Y[i]/(double)ncell[0];
-			}
-			if( rZ )
-			{
-				rhsZ[ij] = pen_rhs.Z[i]/(double)ncell[0];
-			}
+				ijk = kjn + i;
 
-			if( lX )
-			{
-				lhsX[ij] = pen_lhs.X[i]/(double)ncell[0];
-			}
-			if( lY )
-			{
-				lhsY[ij] = pen_lhs.Y[i]/(double)ncell[0];
-			}
-			if( lZ )
-			{
-				lhsZ[ij] = pen_lhs.Z[i]/(double)ncell[0];
+				if( rX )
+				{
+					rhsX[ijk] = pen_rhs.X[i]/(double)ncell[0];
+				}
+				if( rY )
+				{
+					rhsY[ijk] = pen_rhs.Y[i]/(double)ncell[0];
+				}
+				if( rZ )
+				{
+					rhsZ[ijk] = pen_rhs.Z[i]/(double)ncell[0];
+				}
+
+				if( lX )
+				{
+					lhsX[ijk] = pen_lhs.X[i]/(double)ncell[0];
+				}
+				if( lY )
+				{
+					lhsY[ijk] = pen_lhs.Y[i]/(double)ncell[0];
+				}
+				if( lZ )
+				{
+					lhsZ[ijk] = pen_lhs.Z[i]/(double)ncell[0];
+				}
 			}
 
 		}
-
 	}
 
 //----------------------------------------------------------------------------//

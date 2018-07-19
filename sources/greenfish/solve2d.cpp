@@ -257,8 +257,8 @@ void class_greenfish::solve2d(  )
 			}
 			else if(lhs_div)
 			{
-				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
-				             + ikY[j] * rhsG[ij] * pen_rhs.Y[j];
+				pen_lhs.X[j] = rhsG[ij] * ( ikX[i] * pen_rhs.X[j]
+				                          + ikY[j] * pen_rhs.Y[j] );
 			}
 			else if(lhs_curl)
 			{
