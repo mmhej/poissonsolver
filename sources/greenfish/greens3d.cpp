@@ -13,13 +13,7 @@ void class_greenfish::greens3d(  )
 //----------------------------------------------------------------------------//
 	const double pi = acos(-1.0);
 
-	const double c_1_2pi = 0.5/pi;
-	const double c_sqrt2 = sqrt(2.0);
-	const double c1 =   25.0/24.0;
-	const double c2 = - 23.0/48.0;
-	const double c3 =   13.0/192.0;
-	const double c4 = -  1.0/384.0;
-	const double gamma = 0.5772156649015329;
+	const double c_1_2pi2 = 0.5/pow(pi,2);
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -158,7 +152,6 @@ void class_greenfish::greens3d(  )
 
 		sigma = dx[0]/pi; // Spectral
 //		sigma = 2.0*dx[0]; // super-Gaussian
-		C = log(2.0*sigma) - gamma;
 
 		for (k = 0; k < ncell[2]; ++k )
 		{
@@ -173,7 +166,7 @@ void class_greenfish::greens3d(  )
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 				for(i = 0; i < ncell[0]; ++i )
 				{
-					x   = xmin[0] + double( icell[0] + i )*dx[0];
+					x = xmin[0] + double( icell[0] + i )*dx[0];
 
 					r = sqrt(x*x + y*y + z*z);
 
@@ -191,8 +184,28 @@ void class_greenfish::greens3d(  )
 */
 
 // Spectral
+
 					rho = r/sigma;
-					pen.X[i] = {0.0 * dx[0]*dx[1]*dx[2], 0.0};
+					if(r > 0.25*dx[0])
+					{
+						pen.X[i] = {c_1_2pi2 * sine_int(rho)/r * dx[0]*dx[1]*dx[2], 0.0};
+					}
+					else
+					{
+						pen.X[i] = {c_1_2pi2/sigma * dx[0]*dx[1]*dx[2], 0.0};
+					}
+
+/*
+					if(r > 0.25*dx[0])
+					{
+						pen.X[i] = { 0.0, 0.0};
+					}
+					else
+					{
+						pen.X[i] = {1.0, 0.0};
+					}
+*/
+
 				}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
@@ -223,7 +236,7 @@ void class_greenfish::greens3d(  )
 //----------------------------------------------------------------------------//
 		ncell[0] = ypen_ext[rank].ncell[0];
 		ncell[1] = ypen_ext[rank].ncell[1];
-		ncell[1] = ypen_ext[rank].ncell[2];
+		ncell[2] = ypen_ext[rank].ncell[2];
 
 		rhsG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
 		pen.resize( ncell[1] );
@@ -254,7 +267,7 @@ void class_greenfish::greens3d(  )
 				for (j = 0; j < ncell[1]; ++j )
 				{
 					ijk = (kn + j) * ncell[0] + i;
-					rhsG[ijk] = pen.X[j];
+					mapG[ijk] = pen.X[j];
 				}
 
 			}

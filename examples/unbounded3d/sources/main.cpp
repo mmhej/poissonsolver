@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
 	int domain_bounds[3] = { 0, 0, 0 };
 
-	int domain_ncell[3]  = { 64, 64, 64 };
+	int domain_ncell[3]  = { 32, 64, 64 };
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_grad = true; // specify lhs operator
+	green.lhs_curl = true; // specify lhs operator
 	green.setup3d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -265,13 +265,15 @@ int main(int argc, char* argv[])
 
 		}
 	}
-*/
+
+
 	MPI_Reduce( &err, &error, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
 	MPI_Reduce( &nrm, &norm, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD );
 	if(rank == 0)
 	{
 		std::cout << "Error: " << std::scientific << std::setw(7) << ncell[0] << std::setw(17) << dx[0] << std::setw(17) << sqrt( error/norm ) << std::endl;
 	}
+*/
 
 //	} // convergence test loop
 
@@ -326,17 +328,17 @@ int main(int argc, char* argv[])
 	vtifile << "        <DataArray type='Float64' Name='B' NumberOfComponents='3'  format='ascii'>" << "\n";
 	for(ijk = 0; ijk < ncell[0]*ncell[1]*ncell[2]; ++ijk)
 	{
-		vtifile << std::scientific << std::setw(17) << Bx[ijk] << std::setw(17) << By[ijk] << std::setw(17) << Bz[ijk] << "\n";
+		vtifile << std::scientific << std::setw(17) << Bx[ijk] << std::setw(17) << By[ijk] << std::setw(17) << Bz[ijk];
 	}
-	vtifile << "        </DataArray>" << "\n";
+	vtifile << "\n        </DataArray>" << "\n";
 
 
 	vtifile << "        <DataArray type='Float64' Name='A' NumberOfComponents='3'  format='ascii'>" << "\n";
 	for(ijk = 0; ijk < ncell[0]*ncell[1]*ncell[2]; ++ijk)
 	{
-		vtifile << std::scientific << std::setw(17) << Ax[ijk] << std::setw(17) << Ay[ijk] << std::setw(17) << Az[ijk] << "\n";
+		vtifile << std::scientific << std::setw(17) << Ax[ijk] << std::setw(17) << Ay[ijk] << std::setw(17) << Az[ijk];
 	}
-	vtifile << "        </DataArray>" << "\n";
+	vtifile << "\n        </DataArray>" << "\n";
 
 
 	vtifile << "      </CellData>" << "\n";
@@ -370,17 +372,17 @@ int main(int argc, char* argv[])
 		pvtifile << "<?xml version='1.0'?>" << "\n";
 		pvtifile << "<VTKFile type='PImageData' version='0.1' byte_order='LittleEndian'>" << "\n";
 		pvtifile << "<PImageData WholeExtent='" 
-		    << "  " << 0 << "  " << domain_ncell[2]
-		    << "  " << 0 << "  " << domain_ncell[1]
 		    << "  " << 0 << "  " << domain_ncell[0]
+		    << "  " << 0 << "  " << domain_ncell[1]
+		    << "  " << 0 << "  " << domain_ncell[2]
 		    <<"' Ghostlevel='0' Origin='"
-		    << "  " << domain_xmin[2]
-		    << "  " << domain_xmin[1]
 		    << "  " << domain_xmin[0]
+		    << "  " << domain_xmin[1]
+		    << "  " << domain_xmin[2]
 		    << "' Spacing='"
-		    << "  " << dx[2]
+		    << "  " << dx[0]
 		    << "  " << dx[1]
-		    << "  " << dx[0] << "'>" << "\n";
+		    << "  " << dx[2] << "'>" << "\n";
 		pvtifile << "  <PCellData Vectors='output'>" << "\n";
 		pvtifile << "    <PDataArray type='Float64' Name='B' NumberOfComponents='3' format='appended' offset='0'/>" << "\n";
 		pvtifile << "    <PDataArray type='Float64' Name='A' NumberOfComponents='3' format='appended' offset='0'/>" << "\n";
@@ -397,9 +399,9 @@ int main(int argc, char* argv[])
 			pvtifile.open( filename.c_str(), std::ofstream::app );
 
 			pvtifile << "  <Piece Extent='"
-			         << "  " << icell[2] << "  " << icell[2] + ncell[2]
-			         << "  " << icell[1] << "  " << icell[1] + ncell[1]
 			         << "  " << icell[0] << "  " << icell[0] + ncell[0]
+			         << "  " << icell[1] << "  " << icell[1] + ncell[1]
+			         << "  " << icell[2] << "  " << icell[2] + ncell[2]
 			         << "' Source='" << ifilename << "'/>" << "\n";
 
 			if(rank == nproc - 1)

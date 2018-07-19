@@ -34,6 +34,7 @@ void class_greenfish::solve3d(  )
 	MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+
 //----------------------------------------------------------------------------//
 // Find out which fields to map
 //----------------------------------------------------------------------------//
@@ -114,7 +115,7 @@ void class_greenfish::solve3d(  )
 //----------------------------------------------------------------------------//
 	ncell[0] = xpen[rank].ncell[0];
 	ncell[1] = xpen[rank].ncell[1];
-	ncell[1] = xpen[rank].ncell[2];
+	ncell[2] = xpen[rank].ncell[2];
 
 	pen_rhs.resize( ncell[0] );
 
@@ -326,7 +327,8 @@ void class_greenfish::solve3d(  )
 				if(lhs_grad)
 				{
 					pen_lhs.X[k] = ikX[i] * rhsG[ijk] * pen_rhs.X[k];
-					pen_lhs.Y[k] = ikY[j] * rhsG[ijk] * pen_rhs.X[k];
+					pen_lhs.Y[k] = ikY[j] * rhsG[ijk] * pen_rhs.Y[k];
+					pen_lhs.Z[k] = ikZ[j] * rhsG[ijk] * pen_rhs.Z[k];
 				}
 				else if(lhs_div)
 				{
@@ -347,14 +349,17 @@ void class_greenfish::solve3d(  )
 				{
 					if( lX )
 					{
+//						pen_lhs.X[k] = pen_rhs.X[k];
 						pen_lhs.X[k] = rhsG[ijk] * pen_rhs.X[k];
 					}
 					if( lY )
 					{
+//						pen_lhs.Y[k] = pen_rhs.Y[k];
 						pen_lhs.Y[k] = rhsG[ijk] * pen_rhs.Y[k];
 					}
 					if( lZ )
 					{
+//						pen_lhs.Z[k] = pen_rhs.Z[k];
 						pen_lhs.Z[k] = rhsG[ijk] * pen_rhs.Z[k];
 					}
 				}
