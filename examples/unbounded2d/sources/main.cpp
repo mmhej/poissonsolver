@@ -39,8 +39,8 @@ int main(int argc, char* argv[])
 
 	int domain_bounds[2] = {0,0};
 
-//	int domain_ncell[2]  = { 64, 64};
-	int domain_ncell[2]  = { 128, 128};
+	int domain_ncell[2]  = { 64, 64};
+//	int domain_ncell[2]  = { 128, 128};
 //	int domain_ncell[2]  = { 256, 256};
 //	int domain_ncell[2]  = { 512, 512};
 //	int domain_ncell[2]  = { 1024, 1024};
@@ -61,10 +61,12 @@ int main(int argc, char* argv[])
 
 	double err, error;
 	double nrm, norm;
+	double solX, solY, solZ;
 
 	double * Ax;
 	double * Ay;
 	double * Az;
+
 	double * Bx;
 	double * By;
 	double * Bz;
@@ -152,7 +154,15 @@ int main(int argc, char* argv[])
 			r = sqrt(x*x + y*y);
 			if( r < r0 )
 			{
-				Bx[ij] = 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4);
+				Bx[ij] = 4.0 * c * pow(r0,2) 
+				       * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2)))
+				       * ( pow(r0,4)
+				         - pow(x,4)
+				         - pow(y,4)
+				         - 2.0*pow(x,2)*pow(y,2)
+				         - c*pow(x,2)*pow(r0,2)
+				         - c*pow(y,2)*pow(r0,2) )
+				       * pow(pow(r0,2) - pow(x,2) - pow(y,2),-4);
 			}
 			else
 			{
@@ -218,27 +228,22 @@ int main(int argc, char* argv[])
 			r = sqrt(x*x + y*y);
 			if( r < r0 )
 			{
-// A
-//				err += dx[0]*dx[1]* pow( Ax[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2))) , 2);
-//				nrm += dx[0]*dx[1]* pow( exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2))), 2 );
+				solX = - 2.0 * c * pow(r0,2) * x
+				     * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2)))
+				     * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2);
 
-// B
-//				err += dx[0]*dx[1]* pow( Bx[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4)) ,2);
-//				nrm += dx[0]*dx[1]* pow( 4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4) ,2);
+				solY = - 2.0 * c * pow(r0,2) * y
+				     * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2)))
+				     * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2);
 
-// Ax
-				err += dx[0]*dx[1]* pow( Ax[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
-				nrm += dx[0]*dx[1]* pow( - 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
+				err += dx[0]*dx[1]* pow( Ax[ij] - solX , 2);
+				nrm += dx[0]*dx[1]* pow( solX , 2);
 
-// Ay
-				err += dx[0]*dx[1]* pow( Ay[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) ) , 2);
-				nrm += dx[0]*dx[1]* pow( - 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) , 2);
-
+				err += dx[0]*dx[1]* pow( Ay[ij] - solY , 2);
+				nrm += dx[0]*dx[1]* pow( solY , 2);
 			}
 			else
 			{
-
-//				err += dx[0]*dx[1]* pow( Bx[ij], 2);
 				err += dx[0]*dx[1]* pow( Ax[ij] , 2);
 				err += dx[0]*dx[1]* pow( Ay[ij] , 2);
 			}

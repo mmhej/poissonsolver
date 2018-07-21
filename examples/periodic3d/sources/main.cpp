@@ -34,13 +34,12 @@ int main(int argc, char* argv[])
 	const double c = 10.0;
 	const double r0 = 0.5;
 
-	const double domain_xmin[3]   = { -0.5, -1.0, -1.0 };
-	const double domain_xmax[3]   = {  0.5,  1.0,  1.0 };
+	const double domain_xmin[3]   = { -1.0, -1.0, -1.0 };
+	const double domain_xmax[3]   = {  1.0,  1.0,  1.0 };
 
-	int domain_bounds[3] = { 0, 0, 0 };
+	int domain_bounds[3] = { 1, 1, 1 };
 
-	int domain_ncell[3]  = { 32, 64, 64 };
-//	int domain_ncell[3]  = { 64, 128, 128 };
+	int domain_ncell[3]  = { 64, 64, 64 };
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -159,51 +158,9 @@ int main(int argc, char* argv[])
 				ijk = kjn + i;
 				x  = xmin[0] + (double(i) + 0.5)*dx[0];
 
-				rho   = sqrt(z*z + y*y);
-				phi   = sqrt( pow(rho - r0,2) + pow(x,2) );
-				theta = atan2(z,y);
-
-				if( phi < r0)
-				{
-					Bmag = -exp(- c*pow(r0,2)/(2.0*r0*rho - pow(rho,2) - pow(x,2))) *
-					     ( 4.0*pow(c,2)*pow(r0,4)*pow(x,2)*pow(rho,2)
-					     - 16.0*pow(r0,4)*pow(rho,4)
-					     + 32.0*pow(r0,3)*pow(rho,5)
-					     - 24.0*pow(r0,2)*pow(rho,6)
-					     + 8.0*r0*pow(rho,7) 
-					     - 4.0*pow(rho,6)*pow(x,2)
-					     - 6.0*pow(rho,4)*pow(x,4) 
-					     - 4.0*pow(rho,2)*pow(x,6)
-					     - 8.0*c*pow(r0,5)*pow(rho,3)
-					     + 8.0*c*pow(r0,4)*pow(rho,4)
-					     - 6.0*c*pow(r0,3)*pow(rho,5) 
-					     + 4.0*pow(c,2)*pow(r0,6)*pow(rho,2)
-					     - 8.0*pow(c,2)*pow(r0,5)*pow(rho,3) 
-					     + 4.0*pow(c,2)*pow(r0,4)*pow(rho,4) 
-					     + 2.0*c*pow(r0,2)*pow(rho,6)
-					     + 32.0*pow(r0,3)*pow(rho,3)*pow(x,2)
-					     - 48.0*pow(r0,2)*pow(rho,4)*pow(x,2)
-					     - 24.0*pow(r0,2)*pow(rho,2)*pow(x,4) 
-					     + 24.0*r0*pow(rho,5)*pow(x,2)
-					     + 24.0*r0*pow(rho,3)*pow(x,4)
-					     + 8.0*r0*rho*pow(x,6)
-					     + 2.0*c*pow(r0,3)*rho*pow(x,4)
-					     + 2.0*c*pow(r0,2)*pow(rho,2)*pow(x,4)
-					     - 4.0*c*pow(r0,3)*pow(rho,3)*pow(x,2) 
-					     + 4.0*c*pow(r0,2)*pow(rho,4)*pow(x,2) 
-					     - pow(rho,8) - pow(x,8))
-					     * pow(2.0*r0*rho - pow(rho,2) - pow(x,2),-4) * pow(rho,-2);
-
-					Bx[ijk] =   0.0;
-					By[ijk] = - sin(theta)*Bmag;
-					Bz[ijk] =   cos(theta)*Bmag;
-				}
-				else
-				{
-					Bx[ijk] = 0.0;
-					By[ijk] = 0.0;
-					Bz[ijk] = 0.0;
-				}
+				Bx[ijk] = - sin(2.0*pi*x) * cos(2.0*pi*y) * sin(2.0*pi*z);
+				By[ijk] = - cos(2.0*pi*x) * sin(2.0*pi*y) * sin(2.0*pi*z);
+				Bz[ijk] = - 2.0 * cos(2.0*pi*x) * cos(2.0*pi*y) * cos(2.0*pi*z);
 
 			}
 		}
@@ -265,42 +222,19 @@ int main(int argc, char* argv[])
 				ijk = kjn + i;
 				x  = xmin[0] + (double(i) + 0.5)*dx[0];
 
-				rho   = sqrt(z*z + y*y);
-				phi   = sqrt( pow(rho - r0,2) + pow(x,2) );
-				theta = atan2(z,y);
+				solX =   cos(2.0*pi*x) * sin(2.0*pi*y) * cos(2.0*pi*z)/(2.0*pi);
+				solY = - sin(2.0*pi*x) * cos(2.0*pi*y) * cos(2.0*pi*z)/(2.0*pi);
+				solZ =   0.0;
 
-				if( phi < r0 )
-				{
-					Amag = 2.0 * c * pow(r0,2) * x
-					     * exp(-c*pow(r0,2)/(2.0*r0*rho - pow(rho,2) - pow(x,2)))
-					     * pow(2.0*r0*rho - pow(rho,2) - pow(x,2),-2);
+				err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
 
-					solX = exp( -c * pow(r0,2)/(2.0 * r0 * rho - pow(rho,2) - pow(x,2)))
-					          * ( 4.0*pow(r0,2) *pow(rho,2)
-					            - 4.0*r0*pow(rho,3) 
-					            - 4.0*r0*rho*pow(x,2)
-					            + pow(rho,4) + 2.0*pow(rho,2)*pow(x,2)
-					            + pow(x,4) + 2.0*c*pow(r0,3)*rho
-					            - 2.0*c*pow(r0,2)*pow(rho,2) )
-					          * pow(2.0*r0*rho - pow(rho,2) - pow(x,2),-2)*pow(rho,-1);
-					solY = cos(theta)*Amag;
-					solZ = sin(theta)*Amag;
+				err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk] - solY, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solY, 2);
 
-					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
+				err += dx[0]*dx[1]*dx[2]* pow( Az[ijk] - solZ, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solZ, 2);
 
-					err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk] - solY, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solY, 2);
-
-					err += dx[0]*dx[1]*dx[2]* pow( Az[ijk] - solZ, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solZ, 2);
-				}
-				else
-				{
-					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk], 2);
-					err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk], 2);
-					err += dx[0]*dx[1]*dx[2]* pow( Az[ijk], 2);
-				}
 			}
 		}
 	}
