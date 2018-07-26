@@ -111,6 +111,7 @@ void class_greenfish::greens2d(  )
 //============================================================================//
 // Unbounded domain
 //============================================================================//
+
 	if(domain_bc[0] == 0 && domain_bc[1] == 0)
 	{
 //----------------------------------------------------------------------------//
@@ -157,6 +158,7 @@ void class_greenfish::greens2d(  )
 
 // 10th order super-Gaussian
 /*
+				sigma = 2.0*dx[0]; // super-Gaussian
 				rho = r/sigma;
 				if(r > 0.25*dx[0])
 				{
@@ -168,9 +170,11 @@ void class_greenfish::greens2d(  )
 				}
 */
 
+
 // Spectral
 				rho = r/sigma;
 				pen.X[i] = {- c_1_2pi * ( bessel_int_J0( rho ) + C ) * dx[0]*dx[1], 0.0};
+
 			}
 
 			pen.fft_shift( );
@@ -240,6 +244,7 @@ void class_greenfish::greens2d(  )
 	else if(domain_bc[0] == 1 && domain_bc[1] == 1)
 	{
 
+
 //----------------------------------------------------------------------------//
 // Calculate Greens function direcly in Fourier space on y-pencil partition
 //----------------------------------------------------------------------------//
@@ -270,6 +275,7 @@ void class_greenfish::greens2d(  )
 				}
 			}
 		}
+
 
 	}
 //============================================================================//
@@ -330,17 +336,6 @@ void class_greenfish::greens2d(  )
 				{
 					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
-
-/*
-				if( icell[0] == 0 && i == 0 && j == 0 )
-				{
-					rhsG[ij] = {0.0,0.0};
-				}
-				else
-				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
-				}
-*/
 
 			}
 		}
@@ -405,17 +400,6 @@ void class_greenfish::greens2d(  )
 					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
 
-/*
-				if( icell[0] == 0 && i == 0 && j == 0 )
-				{
-					rhsG[ij] = {0.0,0.0};
-				}
-				else
-				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
-				}
-*/
-
 			}
 		}
 
@@ -425,6 +409,7 @@ void class_greenfish::greens2d(  )
 		std::cerr << " [greenfish.solve]: Boundary condition configuration unknown."
 		          << std::endl;
 	}
+
 
 //----------------------------------------------------------------------------//
 // Return

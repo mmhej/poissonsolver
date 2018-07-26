@@ -33,14 +33,15 @@ int main(int argc, char* argv[])
 
 	const double c = 10.0;
 	const double r0 = 1.0;
+	const double m = 4.0; 
 
-	const double domain_xmin[2]   = {-1.0, -1.0};
-	const double domain_xmax[2]   = { 1.0,  1.0};
+	const double domain_xmin[2]   = {-2.0, -2.0};
+	const double domain_xmax[2]   = { 2.0,  2.0};
 
 	int domain_bounds[2] = {0,0};
 
-	int domain_ncell[2]  = { 64, 64};
-//	int domain_ncell[2]  = { 128, 128};
+//	int domain_ncell[2]  = { 64, 64};
+	int domain_ncell[2]  = { 128, 128};
 //	int domain_ncell[2]  = { 256, 256};
 //	int domain_ncell[2]  = { 512, 512};
 //	int domain_ncell[2]  = { 1024, 1024};
@@ -154,6 +155,7 @@ int main(int argc, char* argv[])
 			r = sqrt(x*x + y*y);
 			if( r < r0 )
 			{
+/*
 				Bx[ij] = 4.0 * c * pow(r0,2) 
 				       * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2)))
 				       * ( pow(r0,4)
@@ -163,6 +165,10 @@ int main(int argc, char* argv[])
 				         - c*pow(x,2)*pow(r0,2)
 				         - c*pow(y,2)*pow(r0,2) )
 				       * pow(pow(r0,2) - pow(x,2) - pow(y,2),-4);
+*/
+
+				Bx[ij] = pow(1.0 - r*r, m);
+
 			}
 			else
 			{
@@ -226,8 +232,15 @@ int main(int argc, char* argv[])
 			x  = xmin[0] + (double(i) + 0.5)*dx[0];
 
 			r = sqrt(x*x + y*y);
-			if( r < r0 )
+
+
+			if(r < 0.25*dx[0])
 			{
+
+			}
+			else if( r < r0 )
+			{
+/*
 				solX = - 2.0 * c * pow(r0,2) * x
 				     * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2)))
 				     * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2);
@@ -235,6 +248,9 @@ int main(int argc, char* argv[])
 				solY = - 2.0 * c * pow(r0,2) * y
 				     * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2)))
 				     * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2);
+*/
+				solX = - x * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
+				solY = - y * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
 
 				err += dx[0]*dx[1]* pow( Ax[ij] - solX , 2);
 				nrm += dx[0]*dx[1]* pow( solX , 2);
@@ -244,8 +260,21 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
+
+				solX = - x/(2.0*(m+1.0)*pow(r,2));
+				solY = - y/(2.0*(m+1.0)*pow(r,2));
+
+				err += dx[0]*dx[1]* pow( Ax[ij] - solX , 2);
+				nrm += dx[0]*dx[1]* pow( solX , 2);
+
+				err += dx[0]*dx[1]* pow( Ay[ij] - solY , 2);
+				nrm += dx[0]*dx[1]* pow( solY , 2);
+
+
+/*
 				err += dx[0]*dx[1]* pow( Ax[ij] , 2);
 				err += dx[0]*dx[1]* pow( Ay[ij] , 2);
+*/
 			}
 
 
@@ -292,7 +321,21 @@ int main(int argc, char* argv[])
 			x  = xmin[0] + (double(i) + 0.5)*dx[0];
 
 			r = sqrt(x*x + y*y);
-			if( r < r0 )
+
+
+			if(r < 0.25*dx[0])
+			{
+				solX = 0.0;
+				solY = 0.0;
+
+				diffX = Ax[ij] - solX;
+				diffY = Ay[ij] - solY;
+
+//				diffX = solX;
+//				diffY = solY;
+
+			}
+			else if( r < r0 )
 			{
 // A
 //				err = Ax[ij] - exp(-c/(pow(r0,2) - pow(x,2) - pow(y,2)));
@@ -300,18 +343,37 @@ int main(int argc, char* argv[])
 // B
 //				err = Bx[ij] - (4.0 * c * pow(r0,2) * exp(- c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * (pow(r0,4) - pow(x,4) - pow(y,4) - 2.0*pow(x,2)*pow(y,2) - c*pow(x,2)*pow(r0,2) - c*pow(y,2)*pow(r0,2))/pow(pow(r0,2) - pow(x,2) - pow(y,2),4));
 
+
+				solX = - x * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
+				solY = - y * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
+
+				diffX = Ax[ij] - solX;
+				diffY = Ay[ij] - solY;
+
+
+//				diffX = solX;
+//				diffY = solY;
+
 // dAdX
-				diffX = Ax[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
+//				diffX = Ax[ij] - (- 2.0 * c * pow(r0,2) * x * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
 
 // dAdY
-				diffY = Ay[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
+//				diffY = Ay[ij] - (- 2.0 * c * pow(r0,2) * y * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2))) * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2) );
 
 			}
 			else
 			{
 //				err = Bx[ij];
-				diffX = Ax[ij];
-				diffY = Ay[ij];
+
+				solX = - x/(2.0*(m+1.0)*pow(r,2));
+				solY = - y/(2.0*(m+1.0)*pow(r,2));
+
+				diffX = Ax[ij] - solX;
+				diffY = Ay[ij] - solY;
+
+//				diffX = solX;
+//				diffY = solY;
+
 			}
 
 			err = sqrt( pow(diffX,2) + pow(diffY,2) );

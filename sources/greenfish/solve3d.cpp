@@ -328,7 +328,7 @@ void class_greenfish::solve3d(  )
 				{
 					pen_lhs.X[k] = ikX[i] * rhsG[ijk] * pen_rhs.X[k];
 					pen_lhs.Y[k] = ikY[j] * rhsG[ijk] * pen_rhs.Y[k];
-					pen_lhs.Z[k] = ikZ[j] * rhsG[ijk] * pen_rhs.Z[k];
+					pen_lhs.Z[k] = ikZ[k] * rhsG[ijk] * pen_rhs.Z[k];
 				}
 				else if(lhs_div)
 				{

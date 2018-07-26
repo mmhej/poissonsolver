@@ -15,8 +15,8 @@ name = "output/mesh"
 
 set term post eps color solid
 set output name.".ps"
-set xrange [-1.0 : 1.0]
-set yrange [-1.0 : 1.0]
+#set xrange [-1.0 : 1.0]
+#set yrange [-1.0 : 1.0]
 # insert label
 
 plot \

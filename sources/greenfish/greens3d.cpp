@@ -316,6 +316,79 @@ void class_greenfish::greens3d(  )
 
 	}
 //============================================================================//
+// Periodic-periodic-unbounded domain
+//============================================================================//
+/*
+	else if(domain_bc[0] == 1 && domain_bc[1] == 1 && domain_bc[2] == 0)
+	{
+
+//----------------------------------------------------------------------------//
+// Calculate Greens function direcly in Fourier space on y-pencil partition
+//----------------------------------------------------------------------------//
+		ncell[0] = ypen_ext[rank].ncell[0];
+		ncell[1] = ypen_ext[rank].ncell[1];
+		ncell[2] = ypen_ext[rank].ncell[2];
+
+		icell[0] = ypen_ext[rank].icell[0];
+		icell[1] = ypen_ext[rank].icell[1];
+		icell[2] = ypen_ext[rank].icell[2];
+
+		dx[0]    = ypen_ext[rank].dx[0];
+		dx[1]    = ypen_ext[rank].dx[1];
+		dx[2]    = ypen_ext[rank].dx[2];
+
+//----------------------------------------------------------------------------//
+// Calculate 1D free-space Greens function and Fourier transform it
+//----------------------------------------------------------------------------//
+		class_pencil pen(true,false,false);
+
+		pen.resize( ncell[2] );
+
+		sigma = dx[2]/pi; // Spectral
+		C = sigma/pi;
+		for(k = 0; k < ncell[2]; ++k )
+		{
+			z = xmin[2] + double( k )*dx[2];
+
+// Spectral
+			rho = std::abs(z)/sigma;
+			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[2], 0.0};
+		}
+
+		pen.fft_shift( );
+		pen.fft( );
+
+//----------------------------------------------------------------------------//
+// Construct Greens function in Fourier space on y-pencil partition
+//----------------------------------------------------------------------------//
+		rhsG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
+
+		for (k = 0; k < ncell[2]; ++k )
+		{
+			kn = k * ncell[1];
+			for (j = 0; j < ncell[1]; ++j )
+			{
+				kjn = (kn + j) * ncell[0];
+				for(i = 0; i < ncell[0]; ++i )
+				{
+					ijk = kjn + i;
+
+					if( icell[0] == 0 && i == 0 && j == 0 )
+					{
+						rhsG[ijk] = pen.X[k];
+					}
+					else
+					{
+						rhsG[ijk] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] + ikZ[k]*ikZ[k] );
+					}
+
+				}
+			}
+		}
+
+	}
+*/
+//============================================================================//
 // Periodic domain
 //============================================================================//
 	else
