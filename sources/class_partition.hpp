@@ -17,6 +17,7 @@
 //----------------------------------------------------------------------------//
 // System
 #include <stdlib.h>
+#include <iostream>
 #include <vector>
 // External
 #include "mpi.h"
