@@ -64,11 +64,15 @@ int main(int argc, char* argv[])
 
 	double err, error;
 	double nrm, norm;
+	double solX, solY, solZ;
 
-	double * A;
-	double * B;
-	double * dAdX;
-	double * dAdY;
+	double * Ax;
+	double * Ay;
+	double * Az;
+
+	double * Bx;
+	double * By;
+	double * Bz;
 
 	double diffX, diffY;
 
@@ -117,7 +121,8 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_grad = true; // specify lhs operator
+	green.lhs_grad       = true; // specify lhs operator
+//	green.regularisation = 6;    // regularisation order
 	green.setup2d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -135,10 +140,12 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Allocate fields
 //----------------------------------------------------------------------------//
-	A    = new double[ncell[0] * ncell[1]]();
-	B    = new double[ncell[0] * ncell[1]]();
-	dAdX = new double[ncell[0] * ncell[1]]();
-	dAdY = new double[ncell[0] * ncell[1]]();
+	Ax = new double[ncell[0] * ncell[1]]();
+	Ay = new double[ncell[0] * ncell[1]]();
+//	Az = new double[ncell[0] * ncell[1]]();
+	Bx = new double[ncell[0] * ncell[1]]();
+//	By = new double[ncell[0] * ncell[1]]();
+//	Bz = new double[ncell[0] * ncell[1]]();
 
 //----------------------------------------------------------------------------//
 // Initiate fields
@@ -154,27 +161,28 @@ int main(int argc, char* argv[])
 
 			if(std::abs(y) < r0)
 			{
-
-				B[ij] = pow(1.0 - y*y, 5);
-
 /*
-				B[ij] = ( exp( c * pow(y,2) / ( (y - 1.0)*(y + 1.0) ) )
-				      * sin( pi * x ) 
-				      * ( 1.0 * pow(pi,2) * pow(y,8) 
-				        - 4.0 * pow(pi,2) * pow(y,6) 
-				        + 6.0 * pow(pi,2) * pow(y,4)
-				        - 6.0 * c         * pow(y,4) 
-				        - 4.0 * pow(pi,2) * pow(y,2)
-				        - 4.0 * pow(c,2)  * pow(y,2)
-				        + 4.0 * c         * pow(y,2) 
-				        + 1.0 * pow(pi,2) 
-				        + 2.0 * c ) 
-				        )/( pow(y - 1.0,4) * pow(y + 1.0,4) );
+				Bx[ij] = pow(1.0 - y*y, 5);
 */
+
+
+				Bx[ij] = ( exp( c * pow(y,2) / ( (y - 1.0)*(y + 1.0) ) )
+				       * sin( pi * x ) 
+				       * ( 1.0 * pow(pi,2) * pow(y,8) 
+				         - 4.0 * pow(pi,2) * pow(y,6) 
+				         + 6.0 * pow(pi,2) * pow(y,4)
+				         - 6.0 * c         * pow(y,4) 
+				         - 4.0 * pow(pi,2) * pow(y,2)
+				         - 4.0 * pow(c,2)  * pow(y,2)
+				         + 4.0 * c         * pow(y,2) 
+				         + 1.0 * pow(pi,2) 
+				         + 2.0 * c ) 
+				         )/( pow(y - 1.0,4) * pow(y + 1.0,4) );
+
 			}
 			else
 			{
-				B[ij] = 0.0;
+				Bx[ij] = 0.0;
 			}
 
 
@@ -193,7 +201,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push( B, NULL, NULL, NULL, NULL, NULL);
+	green.push( Bx, NULL, NULL, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -215,12 +223,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	A    = new double[ncell[0] * ncell[1]]();
-	dAdX = new double[ncell[0] * ncell[1]]();
-	dAdY = new double[ncell[0] * ncell[1]]();
-
-//	green.pull( B, NULL, NULL, A, NULL, NULL );
-	green.pull( B, NULL, NULL, dAdX, dAdY, NULL );
+	green.pull( Bx, NULL, NULL, Ax, Ay, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error
@@ -241,45 +244,41 @@ int main(int argc, char* argv[])
 
 			if(std::abs(y) < r0)
 			{
-
-// dAdY
-				err += dx[0]*dx[1]* pow( dAdY[ij] - ( 1.0/11.0*pow(y,11) - 5.0/9.0*pow(y,9) + 10.0/7.0*pow(y,7) - 2.0*pow(y,5) + 5.0/3.0*pow(y,3) - y ) , 2);
-				nrm += dx[0]*dx[1]* pow( 1.0/11.0*pow(y,11) - 5.0/9.0*pow(y,9) + 10.0/7.0*pow(y,7) - 2.0*pow(y,5) + 5.0/3.0*pow(y,3) - y, 2);
-
-// A
-
-// B
-
 /*
-// dAdX
-				err += dx[0]*dx[1]* pow( dAdX[ij] - ( pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x ) ), 2);
-				nrm += dx[0]*dx[1]* pow( pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) )*cos( pi*x ), 2);
-
-// dAdY
-				err += dx[0]*dx[1]* pow( dAdY[ij] - (- 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ) ) , 2);
-				nrm += dx[0]*dx[1]* pow( - 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) ), 2);
+				solX = 0.0;
+				solY = 1.0/11.0*pow(y,11) - 5.0/9.0*pow(y,9) + 10.0/7.0*pow(y,7) - 2.0*pow(y,5) + 5.0/3.0*pow(y,3) - y;
 */
+
+				solX = pi * exp( c * pow(y,2)/( ( y - 1.0 )*( y + 1.0 ) ) ) * cos( pi*x );
+				solY = - 2.0 * c * y * exp( c * pow(y,2) /( ( y - 1.0 )*( y + 1.0 ) ) ) * sin( pi * x )/( pow( y - 1.0, 2 ) * pow( y + 1.0, 2 ) );
 
 			}
 			else
 			{
-
-//				err += dx[0]*dx[1]* pow( A[ij], 2);
-//				err += dx[0]*dx[1]* pow( B[ij], 2);
-//				err += dx[0]*dx[1]* pow( dAdX[ij] , 2);
-//				err += dx[0]*dx[1]* pow( dAdY[ij] , 2);
-
+/*
 				if( y > 0.0)
 				{
-					err += dx[0]*dx[1]* pow( dAdY[ij] - ( - 256.0/693.0 ) , 2);
-					nrm += dx[0]*dx[1]* pow( 256.0/693.0 , 2);
+					solX = 0.0;
+					solY = - 256.0/693.0;
 				}
 				else if( y < 0.0)
 				{
-					err += dx[0]*dx[1]* pow( dAdY[ij] - ( 256.0/693.0 ) , 2);
-					nrm += dx[0]*dx[1]* pow( 256.0/693.0 , 2);
+					solX = 0.0;
+					solY = 256.0/693.0;
 				}
+*/
+
+				solX = 0.0;
+				solY = 0.0;
+
 			}
+
+			err += dx[0]*dx[1]* pow( Ax[ij] - solX , 2);
+			nrm += dx[0]*dx[1]* pow( solX, 2);
+
+			err += dx[0]*dx[1]* pow( Ay[ij] - solY , 2);
+			nrm += dx[0]*dx[1]* pow( solY, 2);
+
 
 		}
 	}

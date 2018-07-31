@@ -20,7 +20,7 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 // Variables
 //----------------------------------------------------------------------------//
 	int     nproc, rank;
-	int     i, j, k, kn, kjn, ijk, ij;
+	int     i, j, k, n, kn, kjn, ijk, ij;
 	int     nfft;
 	int     ncell[3];
 	int     icell[3];
@@ -29,11 +29,12 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 	double  xmin[3];
 
 	double  x,y,z,r,rho;
+	double  arg, sum;
 	double  sigma;
-	double  dk;
+	double  h, dk;
 
-	double  C;
-
+	double * c;
+	double C1;
 //----------------------------------------------------------------------------//
 // Get MPI info
 //----------------------------------------------------------------------------//
@@ -50,6 +51,8 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 	dx[0] = dom_dx[0];
 	dx[1] = dom_dx[1];
 	dx[2] = dom_dx[2];
+
+	h = std::max(std::max(dx[0],dx[1]),dx[2]);
 
 	xpen_ext = partition_setup( 0, dom_ncell, dom_bc, dom_dx, true, true, true );
 	ypen_ext = partition_setup( 1, dom_ncell, dom_bc, dom_dx, true, true, true );
@@ -117,9 +120,19 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 //============================================================================//
 // Create regularisation kernel
 //============================================================================//
+	sigma = 2.0*h;
 	if( reg_order > 0 )
 	{
-		zeta = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
+		if( reg_order % 2 != 0 ){ reg_order += 1; }
+
+		zeta = new double[ncell[0]*ncell[1]*ncell[2]];
+
+		c = new double[reg_order/2 - 1];
+		c[0] = 1.0;
+		for( n = 1; n <= (reg_order/2 - 1); ++n)
+		{
+			c[n] = c[n-1] * 1.0/double( n );
+		}
 
 		for (k = 0; k < ncell[2]; ++k )
 		{
@@ -131,8 +144,15 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 				{
 					ijk = kjn + i;
 
-					zeta[ijk] = {1.0,0.0};
-
+					arg = 0.5 * pow( sigma, 2 ) * ( pow( std::imag(ikX[i]), 2 )
+					                              + pow( std::imag(ikY[j]), 2 )
+					                              + pow( std::imag(ikZ[k]), 2 ) );
+					sum = 0.0;
+					for( n = 0; n <= (reg_order/2 - 1); ++n)
+					{
+						sum += c[n] * pow(arg,n);
+					}
+					zeta[ijk] = sum * exp( -arg );
 				}
 			}
 		}
@@ -175,9 +195,7 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 		xmin[2] = - ( 0.5 * double( ypen_ext[rank].ncell[2] ) )*dx[2];
 
 
-		sigma = dx[0]/pi; // Spectral
-//		sigma = 2.0*dx[0]; // super-Gaussian
-
+		sigma = h/pi; 
 		for (k = 0; k < ncell[2]; ++k )
 		{
 			kn = k * ncell[1];
@@ -193,23 +211,8 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 				{
 					x = xmin[0] + double( icell[0] + i )*dx[0];
 
+// Greens function
 					r = sqrt(x*x + y*y + z*z);
-
-// 10th order super-Gaussian
-/*
-					rho = r/sigma;
-					if(r > 0.25*dx[0])
-					{
-						pen.X[i] = {0.0 * dx[0]*dx[1]*dx[2], 0.0};
-					}
-					else
-					{
-						pen.X[i] = {0.0 * dx[0]*dx[1]*dx[2], 0.0};
-					}
-*/
-
-// Spectral
-
 					rho = r/sigma;
 					if(r > 0.25*dx[0])
 					{
@@ -219,18 +222,6 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 					{
 						pen.X[i] = {c_1_2pi2/sigma * dx[0]*dx[1]*dx[2], 0.0};
 					}
-
-/*
-					if(r > 0.25*dx[0])
-					{
-						pen.X[i] = { 0.0, 0.0};
-					}
-					else
-					{
-						pen.X[i] = {1.0, 0.0};
-					}
-*/
-
 				}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
@@ -369,14 +360,14 @@ void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
 		pen.resize( ncell[2] );
 
 		sigma = dx[2]/pi; // Spectral
-		C = sigma/pi;
+		C1 = sigma/pi;
 		for(k = 0; k < ncell[2]; ++k )
 		{
 			z = xmin[2] + double( k )*dx[2];
 
 // Spectral
 			rho = std::abs(z)/sigma;
-			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[2], 0.0};
+			pen.X[j] = {- C1 * ( sine_int( rho )*rho + cos(rho) ) * dx[2], 0.0};
 		}
 
 		pen.fft_shift( );

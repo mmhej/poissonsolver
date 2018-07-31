@@ -154,7 +154,6 @@ void class_greenfish::solve2d(  )
 				rhsZ[ij] = pen_rhs.Z[i];
 			}
 		}
-
 	}
 
 //----------------------------------------------------------------------------//
@@ -247,7 +246,6 @@ void class_greenfish::solve2d(  )
 		{
 			ij = j * ncell[0] + i;
 
-
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Regularise rhs
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
@@ -255,15 +253,15 @@ void class_greenfish::solve2d(  )
 			{
 				if( rX )
 				{
-					pen_rhs.X[j] = zeta[ij] * pen_rhs.X[j];
+					pen_rhs.X[j] *= zeta[ij];
 				}
 				if( rY )
 				{
-					pen_rhs.Y[j] = zeta[ij] * pen_rhs.Y[j];
+					pen_rhs.Y[j] *= zeta[ij];
 				}
 				if( rZ )
 				{
-					pen_rhs.Z[j] = zeta[ij] * pen_rhs.Z[j];
+					pen_rhs.Z[j] *= zeta[ij];
 				}
 			}
 
@@ -300,7 +298,6 @@ void class_greenfish::solve2d(  )
 					pen_lhs.Z[j] = G2D[ij] * pen_rhs.Z[j];
 				}
 			}
-
 		}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
@@ -340,9 +337,7 @@ void class_greenfish::solve2d(  )
 			{
 				lhsZ[ij] = pen_lhs.Z[j]/(double)nfft;
 			}
-
 		}
-
 	}
 
 //----------------------------------------------------------------------------//
@@ -394,7 +389,6 @@ void class_greenfish::solve2d(  )
 			{
 				pen_lhs.Z[i] = lhsZ[ij];
 			}
-
 		}
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
@@ -434,9 +428,7 @@ void class_greenfish::solve2d(  )
 			{
 				lhsZ[ij] = pen_lhs.Z[i]/(double)ncell[0];
 			}
-
 		}
-
 	}
 
 //----------------------------------------------------------------------------//

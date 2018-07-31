@@ -75,7 +75,7 @@ class class_greenfish
 		std::complex<double> * ikY  = NULL;
 		std::complex<double> * ikZ  = NULL;
 
-		std::complex<double> * zeta = NULL;
+		double * zeta = NULL;
 
 		std::complex<double> * mapG = NULL;
 		std::complex<double> * G2D  = NULL;
@@ -99,7 +99,7 @@ class class_greenfish
 		bool lhs_div       = false;
 		bool lhs_curl      = false;
 		bool rhs_reproject = false;
-		int regularisation = 0;
+		int  regularisation = 0;
 
 //----------------------------------------------------------------------------//
 // Prototype public routines

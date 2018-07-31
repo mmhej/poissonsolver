@@ -116,8 +116,10 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_grad = true; // specify lhs operator
-//	green.lhs_curl = true; // specify lhs operator
+	green.lhs_grad       = true; // specify lhs operator
+//	green.lhs_curl       = true; // specify lhs operator
+//	green.regularisation = 6;    // regularisation order
+//	green.rhs_reproject  = true; // reprojection of rhs field
 	green.setup3d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -162,7 +164,6 @@ int main(int argc, char* argv[])
 				ijk = kjn + i;
 				x  = xmin[0] + (double(i) + 0.5)*dx[0];
 
-
 // unbounded-unbounded-periodic
 				r = sqrt(x*x + y*y);
 				if( r < r0 )
@@ -177,7 +178,6 @@ int main(int argc, char* argv[])
 					By[ijk] = 0.0;
 					Bz[ijk] = 0.0;
 				}
-
 
 // periodic-periodic-unbounded
 /*
@@ -266,44 +266,26 @@ int main(int argc, char* argv[])
 				ijk = kjn + i;
 				x  = xmin[0] + (double(i) + 0.5)*dx[0];
 
-
 // unbounded-unbounded-periodic
 				r = sqrt(x*x + y*y);
 				if(r < 0.25*dx[0])
 				{
-
+					solX = 0.0;
+					solY = 0.0;
+					solZ = 0.0;
 				}
 				else if( r < r0 )
 				{
 					solX = - x * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
 					solY = - y * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
 					solZ = 0.0;
-
-					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
-
-					err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk] - solY, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solY, 2);
-
-					err += dx[0]*dx[1]*dx[2]* pow( Az[ijk] - solZ, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solZ, 2);
-
 				}
 				else
 				{
-
 					solX = - x/(2.0*(m+1.0)*pow(r,2));
 					solY = - y/(2.0*(m+1.0)*pow(r,2));
 					solZ = 0.0;
-
-					err += dx[0]*dx[1]* pow( Ax[ijk] - solX , 2);
-					nrm += dx[0]*dx[1]* pow( solX , 2);
-
-					err += dx[0]*dx[1]* pow( Ay[ijk] - solY , 2);
-					nrm += dx[0]*dx[1]* pow( solY , 2);
 				}
-
-
 
 // periodic-periodic-unbounded
 /*
@@ -311,27 +293,28 @@ int main(int argc, char* argv[])
 				{
 					solX = 0.0;
 					solY = - 2.0 * c * z * exp( c * pow(z,2)/((z - 1.0)*(z + 1.0)) )
-						     * sin( pi * x ) * sin( pi * y )
-						     * pow( pow(z - 1.0,2) * pow(z + 1.0,2), -1);
+					       * sin( pi * x ) * sin( pi * y )
+					       * pow( pow(z - 1.0,2) * pow(z + 1.0,2), -1);
 					solZ = - pi * exp( c* pow(z,2)/( (z - 1.0)*(z + 1.0)) )
-						     * sin( pi * x ) * cos( pi * y );
-
-					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
-
-					err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk] - solY, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solY, 2);
-
-					err += dx[0]*dx[1]*dx[2]* pow( Az[ijk] - solZ, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solZ, 2);
+					       * sin( pi * x ) * cos( pi * y );
 				}
 				else
 				{
-					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk], 2);
-					err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk], 2);
-					err += dx[0]*dx[1]*dx[2]* pow( Az[ijk], 2);
+					solX = 0.0;
+					solY = 0.0;
+					solZ = 0.0;
 				}
 */
+
+				err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
+
+				err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk] - solY, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solY, 2);
+
+				err += dx[0]*dx[1]*dx[2]* pow( Az[ijk] - solZ, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solZ, 2);
+
 			}
 		}
 	}

@@ -34,13 +34,13 @@ int main(int argc, char* argv[])
 	const double c = 10.0;
 	const double r0 = 0.5;
 
-	const double domain_xmin[3]   = { -0.5, -1.0, -1.0 };
-	const double domain_xmax[3]   = {  0.5,  1.0,  1.0 };
+	const double domain_xmin[3] = { -0.5, -1.0, -1.0 };
+	const double domain_xmax[3] = {  0.5,  1.0,  1.0 };
 
 	int domain_bounds[3] = { 0, 0, 0 };
 
-	int domain_ncell[3]  = { 32, 64, 64 };
-//	int domain_ncell[3]  = { 64, 128, 128 };
+//	int domain_ncell[3]  = { 32, 64, 64 };
+	int domain_ncell[3]  = { 64, 128, 128 };
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -114,7 +114,9 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_curl = true; // specify lhs operator
+	green.lhs_curl       = true; // specify lhs operator
+//	green.regularisation = 6;    // regularisation order
+//	green.rhs_reproject  = true; // reprojection of rhs field
 	green.setup3d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -285,22 +287,22 @@ int main(int argc, char* argv[])
 					          * pow(2.0*r0*rho - pow(rho,2) - pow(x,2),-2)*pow(rho,-1);
 					solY = cos(theta)*Amag;
 					solZ = sin(theta)*Amag;
-
-					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
-
-					err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk] - solY, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solY, 2);
-
-					err += dx[0]*dx[1]*dx[2]* pow( Az[ijk] - solZ, 2);
-					nrm += dx[0]*dx[1]*dx[2]* pow( solZ, 2);
 				}
 				else
 				{
-					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk], 2);
-					err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk], 2);
-					err += dx[0]*dx[1]*dx[2]* pow( Az[ijk], 2);
+					solX = 0.0;
+					solY = 0.0;
+					solZ = 0.0;
 				}
+
+				err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
+
+				err += dx[0]*dx[1]*dx[2]* pow( Ay[ijk] - solY, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solY, 2);
+
+				err += dx[0]*dx[1]*dx[2]* pow( Az[ijk] - solZ, 2);
+				nrm += dx[0]*dx[1]*dx[2]* pow( solZ, 2);
 			}
 		}
 	}
@@ -312,7 +314,6 @@ int main(int argc, char* argv[])
 	{
 		std::cout << "Error: " << std::scientific << std::setw(7) << ncell[0] << std::setw(17) << dx[0] << std::setw(17) << sqrt( error/norm ) << std::endl;
 	}
-
 
 //	} // convergence test loop
 

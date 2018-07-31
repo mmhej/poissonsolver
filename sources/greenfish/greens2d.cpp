@@ -13,22 +13,15 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 // Parameters
 //----------------------------------------------------------------------------//
 	const double pi = acos(-1.0);
+	const double gamma = 0.5772156649015329;
 
 	const double c_1_2pi = 0.5/pi;
-	const double c_sqrt2 = sqrt(2.0);
-	const double c1 =   25.0/24.0;
-	const double c2 = - 23.0/48.0;
-	const double c3 =   13.0/192.0;
-	const double c4 = -  1.0/384.0;
-
-//	const double c[5] = {1.0, 0.5, 0.125, 1.0/48.0, 1.0/384.0};
-	const double gamma = 0.5772156649015329;
 
 //----------------------------------------------------------------------------//
 // Variables
 //----------------------------------------------------------------------------//
 	int     nproc, rank;
-	int     i, j, jn, ij, k;
+	int     i, j, jn, ij, n;
 	int     nfft;
 	int     ncell[2];
 	int     icell[2];
@@ -36,13 +29,12 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 	double  xmin[2];
 
 	double  x,y,r,rho;
-	std::complex<double> s2;
+	double  arg, sum;
 	double  sigma;
-	double  dk;
+	double  h, dk;
 
 	double * c;
-
-	double  C;
+	double  C1, C2;
 
 //----------------------------------------------------------------------------//
 // Get MPI info
@@ -62,6 +54,8 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 
 	dx[0] = dom_dx[0];
 	dx[1] = dom_dx[1];
+
+	h = std::max(dx[0],dx[1]);
 
 	xpen_ext = partition_setup( 0, dom_ncell, dom_bc, dom_dx, true, true, true );
 	ypen_ext = partition_setup( 1, dom_ncell, dom_bc, dom_dx, true, true, true );
@@ -112,19 +106,18 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 //============================================================================//
 // Create regularisation kernel
 //============================================================================//
-	sigma = 2.0*dx[0];
+	sigma = 2.0*h;
 	if( reg_order > 0 )
 	{
-
 		if( reg_order % 2 != 0 ){ reg_order += 1; }
 
-		zeta = new std::complex<double>[ncell[0]*ncell[1]];
+		zeta = new double[ncell[0]*ncell[1]];
 
 		c = new double[reg_order/2 - 1];
 		c[0] = 1.0;
-		for( k = 1; k <= (reg_order/2 - 1); ++k)
+		for( n = 1; n <= (reg_order/2 - 1); ++n)
 		{
-			c[k] = c[k-1] * 1.0/double( k );
+			c[n] = c[n-1] * 1.0/double( n );
 		}
 
 		for(j = 0; j < ncell[1]; ++j )
@@ -133,12 +126,14 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 			for (i = 0; i < ncell[0]; ++i )
 			{
 				ij = jn + i;
-
-				s2 = - ( ikX[i]*ikX[i] + ikY[j]*ikY[j] ) * sigma;
-				for( k = 0; k <= (reg_order/2 - 1); ++k)
+				arg = 0.5 * pow( sigma, 2 ) * ( pow( std::imag(ikX[i]), 2 )
+				                              + pow( std::imag(ikY[j]), 2 ) );
+				sum = 0.0;
+				for( n = 0; n <= (reg_order/2 - 1); ++n)
 				{
-					zeta[ij] = c[k] * pow( 0.5*s2,k)*exp(0.5*s2);
+					sum += c[n] * pow(arg,n);
 				}
+				zeta[ij] = sum * exp( -arg );
 			}
 		}
 	}
@@ -175,8 +170,8 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 		xmin[0] = - ( 0.5 * double( xpen_ext[rank].ncell[0] ) )*dx[0];
 		xmin[1] = - ( 0.5 * double( ypen_ext[rank].ncell[1] ) )*dx[1];
 
-		sigma = dx[0]/pi; // Spectral
-		C = log(2.0*sigma) - gamma;
+		sigma = h/pi; // Spectral
+		C2    = log(2.0*sigma) - gamma;
 
 		for (j = 0; j < ncell[1]; ++j )
 		{
@@ -191,26 +186,9 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 				x = xmin[0] + double( icell[0] + i )*dx[0];
 				r = sqrt(x*x + y*y);
 
-
-// 10th order super-Gaussian
-/*
-				sigma = 2.0*dx[0]; // super-Gaussian
+// Greens function
 				rho = r/sigma;
-				if(r > 0.25*dx[0])
-				{
-					pen.X[i] = {- (log(r) + 0.5 * exp_int(1,0.5*pow(rho,2)) - (c1 + c2 * pow(rho,2) + c3 * pow(rho,4) + c4 * pow(rho,6) ) * exp(-0.5 * pow(rho,2)) ) * c_1_2pi * dx[0]*dx[1], 0.0};
-				}
-				else
-				{
-					pen.X[i] = {( 0.5*gamma - log(c_sqrt2 * sigma) + c1 )*c_1_2pi * dx[0]*dx[1], 0.0};
-				}
-*/
-
-
-// Spectral
-				rho = r/sigma;
-				pen.X[i] = {- c_1_2pi * ( bessel_int_J0( rho ) + C ) * dx[0]*dx[1], 0.0};
-
+				pen.X[i] = {- c_1_2pi * ( bessel_int_J0( rho ) + C2 ) * dx[0]*dx[1], 0.0};
 			}
 
 			pen.fft_shift( );
@@ -339,14 +317,14 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 		pen.resize( ncell[1] );
 
 		sigma = dx[1]/pi; // Spectral
-		C = sigma/pi;
+		C1 = sigma/pi;
 		for(j = 0; j < ncell[1]; ++j )
 		{
 			y = xmin[1] + double( j )*dx[1];
 
 // Spectral
 			rho = std::abs(y)/sigma;
-			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[1], 0.0};
+			pen.X[j] = {- C1 * ( sine_int( rho )*rho + cos(rho) ) * dx[1], 0.0};
 		}
 
 		pen.fft_shift( );
@@ -402,14 +380,14 @@ void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
 		pen.resize( nfft );
 
 		sigma = dx[0]/pi; // Spectral
-		C = sigma/pi;
+		C1 = sigma/pi;
 		for(i = 0; i < nfft; ++i )
 		{
 			x = xmin[0] + double( i )*dx[0];
 
 // Spectral
 			rho = std::abs(x)/sigma;
-			pen.X[j] = {- C * ( sine_int( rho )*rho + cos(rho) ) * dx[0], 0.0};
+			pen.X[j] = {- C1 * ( sine_int( rho )*rho + cos(rho) ) * dx[0], 0.0};
 		}
 
 		pen.fft_shift( );

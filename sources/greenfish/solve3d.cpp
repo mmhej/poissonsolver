@@ -21,6 +21,8 @@ void class_greenfish::solve3d(  )
 	int     nfft;
 	int     ncell[3];
 
+	std::complex<double> div_psi;
+
 	bool rX = false;
 	bool rY = false;
 	bool rZ = false;
@@ -322,6 +324,25 @@ void class_greenfish::solve3d(  )
 				ijk = (k * ncell[1] + j) * ncell[0] + i;
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Regularise rhs
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				if( regularisation > 0 )
+				{
+					if( rX )
+					{
+						pen_rhs.X[k] *= zeta[ijk];
+					}
+					if( rY )
+					{
+						pen_rhs.Y[k] *= zeta[ijk];
+					}
+					if( rZ )
+					{
+						pen_rhs.Z[k] *= zeta[ijk];
+					}
+				}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Do convolution
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 				if(lhs_grad)
@@ -333,17 +354,17 @@ void class_greenfish::solve3d(  )
 				else if(lhs_div)
 				{
 					pen_lhs.X[k] = G3D[ijk] * ( ikX[i] * pen_rhs.X[k]
-					                           + ikY[j] * pen_rhs.Y[k]
-					                           + ikZ[k] * pen_rhs.Z[k] );
+					                          + ikY[j] * pen_rhs.Y[k]
+					                          + ikZ[k] * pen_rhs.Z[k] );
 				}
 				else if(lhs_curl)
 				{
 					pen_lhs.X[k] = G3D[ijk] * ( ikY[j] * pen_rhs.Z[k]
-					                           - ikZ[k] * pen_rhs.Y[k] );
+					                          - ikZ[k] * pen_rhs.Y[k] );
 					pen_lhs.Y[k] = G3D[ijk] * ( ikZ[k] * pen_rhs.X[k]
-					                           - ikX[i] * pen_rhs.Z[k] );
+					                          - ikX[i] * pen_rhs.Z[k] );
 					pen_lhs.Z[k] = G3D[ijk] * ( ikX[i] * pen_rhs.Y[k]
-					                           - ikY[j] * pen_rhs.X[k] );
+					                          - ikY[j] * pen_rhs.X[k] );
 				}
 				else
 				{
@@ -362,6 +383,19 @@ void class_greenfish::solve3d(  )
 //						pen_lhs.Z[k] = pen_rhs.Z[k];
 						pen_lhs.Z[k] = G3D[ijk] * pen_rhs.Z[k];
 					}
+				}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Reproject rhs field
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+				if( rhs_reproject && rX && rY && rZ )
+				{
+					div_psi = G3D[ijk] * ( ikX[i] * pen_rhs.X[k]
+					                     + ikY[j] * pen_rhs.Y[k]
+					                     + ikZ[k] * pen_rhs.Z[k] );
+					pen_rhs.X[k] += ikX[i] * div_psi;
+					pen_rhs.Y[k] += ikY[j] * div_psi;
+					pen_rhs.Z[k] += ikZ[k] * div_psi;
 				}
 
 			}

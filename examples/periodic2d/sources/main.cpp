@@ -60,11 +60,15 @@ int main(int argc, char* argv[])
 
 	double err, error;
 	double nrm, norm;
+	double solX, solY, solZ;
 
-	double * A;
-	double * B;
-	double * dAdX;
-	double * dAdY;
+	double * Ax;
+	double * Ay;
+	double * Az;
+
+	double * Bx;
+	double * By;
+	double * Bz;
 
 	double diffX, diffY;
 
@@ -113,7 +117,8 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-//	green.lhs_grad = true; // specify lhs operator
+//	green.lhs_grad       = true; // specify lhs operator
+//	green.regularisation = 6;    // regularisation order
 	green.setup2d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -131,10 +136,12 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Allocate fields
 //----------------------------------------------------------------------------//
-	A    = new double[ncell[0] * ncell[1]]();
-	B    = new double[ncell[0] * ncell[1]]();
-	dAdX = new double[ncell[0] * ncell[1]]();
-	dAdY = new double[ncell[0] * ncell[1]]();
+	Ax = new double[ncell[0] * ncell[1]]();
+//	Ay = new double[ncell[0] * ncell[1]]();
+//	Az = new double[ncell[0] * ncell[1]]();
+	Bx = new double[ncell[0] * ncell[1]]();
+//	By = new double[ncell[0] * ncell[1]]();
+//	Bz = new double[ncell[0] * ncell[1]]();
 
 //----------------------------------------------------------------------------//
 // Initiate fields
@@ -148,7 +155,7 @@ int main(int argc, char* argv[])
 			ij = jn + i;
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
 
-			B[ij] = 8.0 * pi * pi * sin(2.0*pi*x) * sin(2.0*pi*y);
+			Bx[ij] = 8.0 * pi * pi * sin(2.0*pi*x) * sin(2.0*pi*y);
 
 		}
 	}
@@ -165,7 +172,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push( B, NULL, NULL, NULL, NULL, NULL);
+	green.push( Bx, NULL, NULL, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -187,11 +194,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	A    = new double[ncell[0] * ncell[1]]();
-	dAdX = new double[ncell[0] * ncell[1]]();
-	dAdY = new double[ncell[0] * ncell[1]]();
-	green.pull( B, NULL, NULL, A, NULL, NULL );
-//	green.pull( B, NULL, NULL, dAdX, dAdY, NULL );
+	green.pull( Bx, NULL, NULL, Ax, NULL, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error
@@ -210,10 +213,10 @@ int main(int argc, char* argv[])
 			ij = jn + i;
 			x = xmin[0] + (double(i) + 0.5)*dx[0];
 
-// Sine function
-			err += dx[0]*dx[1]* pow( A[ij] - sin(2.0*pi*x) * sin(2.0*pi*y), 2 );
-			nrm += dx[0]*dx[1]* pow( sin(2.0*pi*x) * sin(2.0*pi*y), 2 );
+			solX = sin(2.0*pi*x) * sin(2.0*pi*y);
 
+			err += dx[0]*dx[1]* pow( Ax[ij] - solX, 2 );
+			nrm += dx[0]*dx[1]* pow( solX, 2 );
 		}
 	}
 
@@ -278,10 +281,10 @@ int main(int argc, char* argv[])
 		vtifile << std::scientific << std::setw(17) << Bx[ij];
 	}
 	vtifile << "\n        </DataArray>" << "\n";
-	vtifile << "        <DataArray type='Float64' Name='A' NumberOfComponents='2'  format='ascii'>" << "\n";
+	vtifile << "        <DataArray type='Float64' Name='A' NumberOfComponents='1'  format='ascii'>" << "\n";
 	for(ij = 0; ij < ncell[0]*ncell[1]; ++ij)
 	{
-		vtifile << std::scientific << std::setw(17) << Ax[ij] << std::setw(17) << Ay[ij];
+		vtifile << std::scientific << std::setw(17) << Ax[ij];
 	}
 	vtifile << "\n        </DataArray>" << "\n";
 	vtifile << "      </CellData>" << "\n";
@@ -326,7 +329,7 @@ int main(int argc, char* argv[])
 		    << "  " << 0.0 << "'>" << "\n";
 		pvtifile << "  <PCellData Vectors='output'>" << "\n";
 		pvtifile << "    <PDataArray type='Float64' Name='B' NumberOfComponents='1' format='appended' offset='0'/>" << "\n";
-		pvtifile << "    <PDataArray type='Float64' Name='A' NumberOfComponents='2' format='appended' offset='0'/>" << "\n";
+		pvtifile << "    <PDataArray type='Float64' Name='A' NumberOfComponents='1' format='appended' offset='0'/>" << "\n";
 		pvtifile << "  </PCellData>" << "\n";
 		pvtifile.close();
 	}

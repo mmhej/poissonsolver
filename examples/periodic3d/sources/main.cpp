@@ -113,7 +113,9 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_curl = true; // specify lhs operator
+	green.lhs_curl       = true; // specify lhs operator
+//	green.regularisation = 6;    // regularisation order
+//	green.rhs_reproject  = true; // reprojection of rhs field
 	green.setup3d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//

@@ -42,12 +42,6 @@ int main(int argc, char* argv[])
 
 	int domain_ncell[2]  = { 64, 64};
 //	int domain_ncell[2]  = { 128, 128};
-//	int domain_ncell[2]  = { 256, 256};
-//	int domain_ncell[2]  = { 512, 512};
-//	int domain_ncell[2]  = { 1024, 1024};
-//	int domain_ncell[2]  = { 2048, 2048};
-//	int domain_ncell[2]  = { 3000, 3000};
-
 
 //----------------------------------------------------------------------------//
 // Variables
@@ -119,8 +113,8 @@ int main(int argc, char* argv[])
 #endif
 
 	class_greenfish green;
-	green.lhs_grad = true; // specify lhs operator
-	green.regularisation = 1; // regularisation order
+	green.lhs_grad       = true; // specify lhs operator
+//	green.regularisation = 6;    // regularisation order
 	green.setup2d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
@@ -216,7 +210,6 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-//	green.pull( B, NULL, NULL, A, NULL, NULL );
 	green.pull( Bx, NULL, NULL, Ax, Ay, NULL );
 
 //----------------------------------------------------------------------------//
@@ -241,7 +234,8 @@ int main(int argc, char* argv[])
 
 			if(r < 0.25*dx[0])
 			{
-
+				solX = 0.0;
+				solY = 0.0;
 			}
 			else if( r < r0 )
 			{
@@ -254,33 +248,28 @@ int main(int argc, char* argv[])
 				     * exp( -c * pow(r0,2)/(pow(r0,2) - pow(x,2) - pow(y,2)))
 				     * pow(pow(r0,2) - pow(x,2) - pow(y,2), -2);
 */
+
 				solX = - x * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
 				solY = - y * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
 
-				err += dx[0]*dx[1]* pow( Ax[ij] - solX , 2);
-				nrm += dx[0]*dx[1]* pow( solX , 2);
-
-				err += dx[0]*dx[1]* pow( Ay[ij] - solY , 2);
-				nrm += dx[0]*dx[1]* pow( solY , 2);
 			}
 			else
 			{
+/*
+				solX = 0.0;
+				solY = 0.0;
+*/
 
 				solX = - x/(2.0*(m+1.0)*pow(r,2));
 				solY = - y/(2.0*(m+1.0)*pow(r,2));
 
-				err += dx[0]*dx[1]* pow( Ax[ij] - solX , 2);
-				nrm += dx[0]*dx[1]* pow( solX , 2);
-
-				err += dx[0]*dx[1]* pow( Ay[ij] - solY , 2);
-				nrm += dx[0]*dx[1]* pow( solY , 2);
-
-
-/*
-				err += dx[0]*dx[1]* pow( Ax[ij] , 2);
-				err += dx[0]*dx[1]* pow( Ay[ij] , 2);
-*/
 			}
+
+			err += dx[0]*dx[1]* pow( Ax[ij] - solX , 2);
+			nrm += dx[0]*dx[1]* pow( solX , 2);
+
+			err += dx[0]*dx[1]* pow( Ay[ij] - solY , 2);
+			nrm += dx[0]*dx[1]* pow( solY , 2);
 
 
 		}
