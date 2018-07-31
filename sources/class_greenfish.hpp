@@ -71,19 +71,22 @@ class class_greenfish
 		std::complex<double> * lhsY = NULL;
 		std::complex<double> * lhsZ = NULL;
 
-		std::complex<double> * ikX = NULL;
-		std::complex<double> * ikY = NULL;
-		std::complex<double> * ikZ = NULL;
+		std::complex<double> * ikX  = NULL;
+		std::complex<double> * ikY  = NULL;
+		std::complex<double> * ikZ  = NULL;
+
+		std::complex<double> * zeta = NULL;
 
 		std::complex<double> * mapG = NULL;
-		std::complex<double> * rhsG = NULL;
+		std::complex<double> * G2D  = NULL;
+		std::complex<double> * G3D  = NULL;
 
 //----------------------------------------------------------------------------//
 // Prototype private routines
 //----------------------------------------------------------------------------//
 		void map( class_communication );
-		void greens2d( );
-		void greens3d( );
+		void greens2d( int [3], int [3], double [3], int );
+		void greens3d( int [3], int [3], double [3], int );
 
 	public:
 //----------------------------------------------------------------------------//

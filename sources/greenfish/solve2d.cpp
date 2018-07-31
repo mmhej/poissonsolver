@@ -247,37 +247,57 @@ void class_greenfish::solve2d(  )
 		{
 			ij = j * ncell[0] + i;
 
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+// Regularise rhs
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+			if( regularisation > 0 )
+			{
+				if( rX )
+				{
+					pen_rhs.X[j] = zeta[ij] * pen_rhs.X[j];
+				}
+				if( rY )
+				{
+					pen_rhs.Y[j] = zeta[ij] * pen_rhs.Y[j];
+				}
+				if( rZ )
+				{
+					pen_rhs.Z[j] = zeta[ij] * pen_rhs.Z[j];
+				}
+			}
+
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Do convolution
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 			if(lhs_grad)
 			{
-				pen_lhs.X[j] = ikX[i] * rhsG[ij] * pen_rhs.X[j];
-				pen_lhs.Y[j] = ikY[j] * rhsG[ij] * pen_rhs.X[j];
+				pen_lhs.X[j] = ikX[i] * G2D[ij] * pen_rhs.X[j];
+				pen_lhs.Y[j] = ikY[j] * G2D[ij] * pen_rhs.X[j];
 			}
 			else if(lhs_div)
 			{
-				pen_lhs.X[j] = rhsG[ij] * ( ikX[i] * pen_rhs.X[j]
-				                          + ikY[j] * pen_rhs.Y[j] );
+				pen_lhs.X[j] = G2D[ij] * ( ikX[i] * pen_rhs.X[j]
+				                         + ikY[j] * pen_rhs.Y[j] );
 			}
 			else if(lhs_curl)
 			{
-				pen_lhs.X[j] =   ikY[j] * rhsG[ij] * pen_rhs.Z[j];
-				pen_lhs.Y[j] = - ikX[i] * rhsG[ij] * pen_rhs.Z[j];
+				pen_lhs.X[j] =   ikY[j] * G2D[ij] * pen_rhs.Z[j];
+				pen_lhs.Y[j] = - ikX[i] * G2D[ij] * pen_rhs.Z[j];
 			}
 			else
 			{
 				if( lX )
 				{
-					pen_lhs.X[j] = rhsG[ij] * pen_rhs.X[j];
+					pen_lhs.X[j] = G2D[ij] * pen_rhs.X[j];
 				}
 				if( lY )
 				{
-					pen_lhs.Y[j] = rhsG[ij] * pen_rhs.Y[j];
+					pen_lhs.Y[j] = G2D[ij] * pen_rhs.Y[j];
 				}
 				if( lZ )
 				{
-					pen_lhs.Z[j] = rhsG[ij] * pen_rhs.Z[j];
+					pen_lhs.Z[j] = G2D[ij] * pen_rhs.Z[j];
 				}
 			}
 

@@ -5,7 +5,8 @@
   Description:  
 */
 //----------------------------------------------------------------------------//
-void class_greenfish::greens3d(  )
+void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],
+                                double dom_dx[3], int reg_order )
 {
 
 //----------------------------------------------------------------------------//
@@ -19,10 +20,11 @@ void class_greenfish::greens3d(  )
 // Variables
 //----------------------------------------------------------------------------//
 	int     nproc, rank;
-	int     i, j, k, kn, kjn, ijk;
+	int     i, j, k, kn, kjn, ijk, ij;
 	int     nfft;
 	int     ncell[3];
 	int     icell[3];
+	int     bc[3];
 	double  dx[3];
 	double  xmin[3];
 
@@ -45,12 +47,12 @@ void class_greenfish::greens3d(  )
 	std::vector<class_partition> xpen_ext;
 	std::vector<class_partition> ypen_ext;
 
-	dx[0] = domain_dx[0];
-	dx[1] = domain_dx[1];
-	dx[2] = domain_dx[2];
+	dx[0] = dom_dx[0];
+	dx[1] = dom_dx[1];
+	dx[2] = dom_dx[2];
 
-	xpen_ext = partition_setup( 0, domain_ncell, domain_bc, domain_dx, true, true, true );
-	ypen_ext = partition_setup( 1, domain_ncell, domain_bc, domain_dx, true, true, true );
+	xpen_ext = partition_setup( 0, dom_ncell, dom_bc, dom_dx, true, true, true );
+	ypen_ext = partition_setup( 1, dom_ncell, dom_bc, dom_dx, true, true, true );
 
 	class_communication comm( xpen_ext, ypen_ext );
 
@@ -113,13 +115,36 @@ void class_greenfish::greens3d(  )
 	}
 
 //============================================================================//
-// Create Greens functions
+// Create regularisation kernel
 //============================================================================//
+	if( reg_order > 0 )
+	{
+		zeta = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
+
+		for (k = 0; k < ncell[2]; ++k )
+		{
+			kn = k * ncell[1];
+			for (j = 0; j < ncell[1]; ++j )
+			{
+				kjn = (kn + j) * ncell[0];
+				for(i = 0; i < ncell[0]; ++i )
+				{
+					ijk = kjn + i;
+
+					zeta[ijk] = {1.0,0.0};
+
+				}
+			}
+		}
+	}
 
 //============================================================================//
-// Unbounded domain
+// Create Greens functions
 //============================================================================//
-	if(domain_bc[0] == 0 && domain_bc[1] == 0 && domain_bc[2] == 0)
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+// Unbounded domain
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	if(dom_bc[0] == 0 && dom_bc[1] == 0 && dom_bc[2] == 0)
 	{
 //----------------------------------------------------------------------------//
 // Construct pencils
@@ -238,7 +263,7 @@ void class_greenfish::greens3d(  )
 		ncell[1] = ypen_ext[rank].ncell[1];
 		ncell[2] = ypen_ext[rank].ncell[2];
 
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
+		G3D = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
 		pen.resize( ncell[1] );
 
 		for (k = 0; k < ncell[2]; ++k )
@@ -303,7 +328,7 @@ void class_greenfish::greens3d(  )
 				for(k = 0; k < ncell[2]; ++k )
 				{
 					ijk = (k * ncell[1] + j) * ncell[0] + i;
-					rhsG[ijk] = pen.X[k];
+					G3D[ijk] = pen.X[k];
 				}
 			}
 		}
@@ -315,11 +340,10 @@ void class_greenfish::greens3d(  )
 		mapG = NULL;
 
 	}
-//============================================================================//
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
 // Periodic-periodic-unbounded domain
-//============================================================================//
-/*
-	else if(domain_bc[0] == 1 && domain_bc[1] == 1 && domain_bc[2] == 0)
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	else if(dom_bc[0] == 1 && dom_bc[1] == 1 && dom_bc[2] == 0)
 	{
 
 //----------------------------------------------------------------------------//
@@ -361,7 +385,7 @@ void class_greenfish::greens3d(  )
 //----------------------------------------------------------------------------//
 // Construct Greens function in Fourier space on y-pencil partition
 //----------------------------------------------------------------------------//
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
+		G3D = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
 
 		for (k = 0; k < ncell[2]; ++k )
 		{
@@ -375,11 +399,11 @@ void class_greenfish::greens3d(  )
 
 					if( icell[0] == 0 && i == 0 && j == 0 )
 					{
-						rhsG[ijk] = pen.X[k];
+						G3D[ijk] = pen.X[k];
 					}
 					else
 					{
-						rhsG[ijk] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] + ikZ[k]*ikZ[k] );
+						G3D[ijk] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] + ikZ[k]*ikZ[k] );
 					}
 
 				}
@@ -387,11 +411,75 @@ void class_greenfish::greens3d(  )
 		}
 
 	}
-*/
-//============================================================================//
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+// Unbounded-unbounded-periodic domain
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	else if(dom_bc[0] == 0 && dom_bc[1] == 0 && dom_bc[2] == 1)
+	{
+
+//----------------------------------------------------------------------------//
+// Calculate 2D Greens function
+//----------------------------------------------------------------------------//
+		ncell[0] = dom_ncell[0];
+		ncell[1] = dom_ncell[1];
+		ncell[2] = 1;
+
+		bc[0]    = dom_bc[0];
+		bc[1]    = dom_bc[1];
+		bc[2]    = -1;
+
+		dx[0]    = dom_dx[0];
+		dx[1]    = dom_dx[1];
+		dx[2]    = 0.0;
+
+		greens2d( ncell, bc, dx, 0 );
+
+//----------------------------------------------------------------------------//
+// Calculate Greens function direcly in Fourier space on y-pencil partition
+//----------------------------------------------------------------------------//
+		ncell[0] = ypen_ext[rank].ncell[0];
+		ncell[1] = ypen_ext[rank].ncell[1];
+		ncell[2] = ypen_ext[rank].ncell[2];
+
+		icell[0] = ypen_ext[rank].icell[0];
+		icell[1] = ypen_ext[rank].icell[1];
+		icell[2] = ypen_ext[rank].icell[2];
+
+		dx[0]    = ypen_ext[rank].dx[0];
+		dx[1]    = ypen_ext[rank].dx[1];
+		dx[2]    = ypen_ext[rank].dx[2];
+
+		G3D = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
+
+		for (k = 0; k < ncell[2]; ++k )
+		{
+			kn = k * ncell[1];
+			for (j = 0; j < ncell[1]; ++j )
+			{
+				kjn = (kn + j) * ncell[0];
+				for(i = 0; i < ncell[0]; ++i )
+				{
+					ijk = kjn + i;
+
+					if( k == 0 )
+					{
+						ij  = j*ncell[0] + i;
+						G3D[ijk] = G2D[ij];
+					}
+					else
+					{
+						G3D[ijk] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] + ikZ[k]*ikZ[k] );
+					}
+
+				}
+			}
+		}
+
+	}
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
 // Periodic domain
-//============================================================================//
-	else
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	else if(dom_bc[0] == 1 && dom_bc[1] == 1 && dom_bc[2] == 1)
 	{
 
 //----------------------------------------------------------------------------//
@@ -409,7 +497,7 @@ void class_greenfish::greens3d(  )
 		dx[1]    = ypen_ext[rank].dx[1];
 		dx[2]    = ypen_ext[rank].dx[2];
 
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
+		G3D = new std::complex<double>[ncell[0]*ncell[1]*ncell[2]];
 
 		for (k = 0; k < ncell[2]; ++k )
 		{
@@ -423,11 +511,11 @@ void class_greenfish::greens3d(  )
 
 					if( icell[0] == 0 && i == 0 && j == 0  && k == 0 )
 					{
-						rhsG[ijk] = {0.0,0.0};
+						G3D[ijk] = {0.0,0.0};
 					}
 					else
 					{
-						rhsG[ijk] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] + ikZ[k]*ikZ[k] );
+						G3D[ijk] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] + ikZ[k]*ikZ[k] );
 					}
 
 				}
@@ -435,14 +523,26 @@ void class_greenfish::greens3d(  )
 		}
 
 	}
-
-/*
 	else
 	{
-		std::cerr << " [greenfish.solve]: Boundary condition configuration unknown."
-		          << std::endl;
+		if( dom_bc[0] + dom_bc[1] + dom_bc[2] == 1 )
+		{
+			std::cerr << " [greenfish.greens3d]: For unbounded-unbounded-periodic "
+			          << "domains the z-direction must be the periodic direction"
+			          << std::endl;
+		}
+		else if( dom_bc[0] + dom_bc[1] + dom_bc[2] == 2 )
+		{
+			std::cerr << " [greenfish.greens3d]: For unbounded-periodic-periodic "
+			          << "domains the z-direction must be the unbounded direction"
+			          << std::endl;
+		}
+		else
+		{
+			std::cerr << " [greenfish.greens3d]: Boundary condition configuration unknown."
+			          << std::endl;
+		}
 	}
-*/
 
 //----------------------------------------------------------------------------//
 // Return

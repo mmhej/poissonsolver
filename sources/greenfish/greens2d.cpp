@@ -5,7 +5,8 @@
   Description:  
 */
 //----------------------------------------------------------------------------//
-void class_greenfish::greens2d(  )
+void class_greenfish::greens2d( int dom_ncell[3], int dom_bc[3],
+                                double dom_dx[3], int reg_order )
 {
 
 //----------------------------------------------------------------------------//
@@ -19,13 +20,15 @@ void class_greenfish::greens2d(  )
 	const double c2 = - 23.0/48.0;
 	const double c3 =   13.0/192.0;
 	const double c4 = -  1.0/384.0;
+
+//	const double c[5] = {1.0, 0.5, 0.125, 1.0/48.0, 1.0/384.0};
 	const double gamma = 0.5772156649015329;
 
 //----------------------------------------------------------------------------//
 // Variables
 //----------------------------------------------------------------------------//
 	int     nproc, rank;
-	int     i, j, jn, ij;
+	int     i, j, jn, ij, k;
 	int     nfft;
 	int     ncell[2];
 	int     icell[2];
@@ -33,8 +36,11 @@ void class_greenfish::greens2d(  )
 	double  xmin[2];
 
 	double  x,y,r,rho;
+	std::complex<double> s2;
 	double  sigma;
 	double  dk;
+
+	double * c;
 
 	double  C;
 
@@ -51,14 +57,14 @@ void class_greenfish::greens2d(  )
 	std::vector<class_partition> xpen_ext;
 	std::vector<class_partition> ypen_ext;
 
-	ncell[0] = domain_ncell[0];
-	ncell[1] = domain_ncell[1];
+	ncell[0] = dom_ncell[0];
+	ncell[1] = dom_ncell[1];
 
-	dx[0] = domain_dx[0];
-	dx[1] = domain_dx[1];
+	dx[0] = dom_dx[0];
+	dx[1] = dom_dx[1];
 
-	xpen_ext = partition_setup( 0, domain_ncell, domain_bc, domain_dx, true, true, true );
-	ypen_ext = partition_setup( 1, domain_ncell, domain_bc, domain_dx, true, true, true );
+	xpen_ext = partition_setup( 0, dom_ncell, dom_bc, dom_dx, true, true, true );
+	ypen_ext = partition_setup( 1, dom_ncell, dom_bc, dom_dx, true, true, true );
 
 	class_communication comm( xpen_ext, ypen_ext );
 
@@ -103,16 +109,47 @@ void class_greenfish::greens2d(  )
 		}
 	}
 
+//============================================================================//
+// Create regularisation kernel
+//============================================================================//
+	sigma = 2.0*dx[0];
+	if( reg_order > 0 )
+	{
+
+		if( reg_order % 2 != 0 ){ reg_order += 1; }
+
+		zeta = new std::complex<double>[ncell[0]*ncell[1]];
+
+		c = new double[reg_order/2 - 1];
+		c[0] = 1.0;
+		for( k = 1; k <= (reg_order/2 - 1); ++k)
+		{
+			c[k] = c[k-1] * 1.0/double( k );
+		}
+
+		for(j = 0; j < ncell[1]; ++j )
+		{
+			jn = j * ncell[0];
+			for (i = 0; i < ncell[0]; ++i )
+			{
+				ij = jn + i;
+
+				s2 = - ( ikX[i]*ikX[i] + ikY[j]*ikY[j] ) * sigma;
+				for( k = 0; k <= (reg_order/2 - 1); ++k)
+				{
+					zeta[ij] = c[k] * pow( 0.5*s2,k)*exp(0.5*s2);
+				}
+			}
+		}
+	}
 
 //============================================================================//
 // Create Greens functions
 //============================================================================//
-
-//============================================================================//
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
 // Unbounded domain
-//============================================================================//
-
-	if(domain_bc[0] == 0 && domain_bc[1] == 0)
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	if(dom_bc[0] == 0 && dom_bc[1] == 0)
 	{
 //----------------------------------------------------------------------------//
 // Construct pencils
@@ -139,7 +176,6 @@ void class_greenfish::greens2d(  )
 		xmin[1] = - ( 0.5 * double( ypen_ext[rank].ncell[1] ) )*dx[1];
 
 		sigma = dx[0]/pi; // Spectral
-//		sigma = 2.0*dx[0]; // super-Gaussian
 		C = log(2.0*sigma) - gamma;
 
 		for (j = 0; j < ncell[1]; ++j )
@@ -199,7 +235,7 @@ void class_greenfish::greens2d(  )
 		ncell[0] = ypen_ext[rank].ncell[0];
 		ncell[1] = ypen_ext[rank].ncell[1];
 
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		G2D = new std::complex<double>[ncell[0]*ncell[1]];
 		pen.resize( ncell[1] );
 
 		for (i = 0; i < ncell[0]; ++i )
@@ -226,7 +262,7 @@ void class_greenfish::greens2d(  )
 			for (j = 0; j < ncell[1]; ++j )
 			{
 				ij = j * ncell[0] + i;
-				rhsG[ij] = pen.X[j];
+				G2D[ij] = pen.X[j];
 			}
 
 		}
@@ -238,12 +274,11 @@ void class_greenfish::greens2d(  )
 		mapG = NULL;
 
 	}
-//============================================================================//
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
 // Periodic domain
-//============================================================================//
-	else if(domain_bc[0] == 1 && domain_bc[1] == 1)
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	else if(dom_bc[0] == 1 && dom_bc[1] == 1)
 	{
-
 
 //----------------------------------------------------------------------------//
 // Calculate Greens function direcly in Fourier space on y-pencil partition
@@ -257,7 +292,7 @@ void class_greenfish::greens2d(  )
 		dx[0]    = ypen_ext[rank].dx[0];
 		dx[1]    = ypen_ext[rank].dx[1];
 
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		G2D = new std::complex<double>[ncell[0]*ncell[1]];
 
 		for(j = 0; j < ncell[1]; ++j )
 		{
@@ -267,21 +302,21 @@ void class_greenfish::greens2d(  )
 				ij = jn + i;
 				if( icell[0] == 0 && i == 0 && j == 0 )
 				{
-					rhsG[ij] = {0.0,0.0};
+					G2D[ij] = {0.0,0.0};
 				}
 				else
 				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+					G2D[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
 			}
 		}
 
 
 	}
-//============================================================================//
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
 // Periodic-unbounded domain
-//============================================================================//
-	else if(domain_bc[0] == 1 && domain_bc[1] == 0)
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	else if(dom_bc[0] == 1 && dom_bc[1] == 0)
 	{
 
 		ncell[0] = ypen_ext[rank].ncell[0];
@@ -320,7 +355,7 @@ void class_greenfish::greens2d(  )
 //----------------------------------------------------------------------------//
 // Construct Greens function in Fourier space on y-pencil partition
 //----------------------------------------------------------------------------//
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		G2D = new std::complex<double>[ncell[0]*ncell[1]];
 		for(j = 0; j < ncell[1]; ++j )
 		{
 			jn = j * ncell[0];
@@ -330,21 +365,21 @@ void class_greenfish::greens2d(  )
 
 				if( icell[0] == 0 && i == 0 )
 				{
-					rhsG[ij] = pen.X[j];
+					G2D[ij] = pen.X[j];
 				}
 				else
 				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+					G2D[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
 
 			}
 		}
 
 	}
-//============================================================================//
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
 // Unbounded-periodic domain
-//============================================================================//
-	else if(domain_bc[0] == 0 && domain_bc[1] == 1)
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = //
+	else if(dom_bc[0] == 0 && dom_bc[1] == 1)
 	{
 
 		ncell[0] = ypen_ext[rank].ncell[0];
@@ -383,7 +418,7 @@ void class_greenfish::greens2d(  )
 //----------------------------------------------------------------------------//
 // Construct Greens function in Fourier space on y-pencil partition
 //----------------------------------------------------------------------------//
-		rhsG = new std::complex<double>[ncell[0]*ncell[1]];
+		G2D = new std::complex<double>[ncell[0]*ncell[1]];
 		for(j = 0; j < ncell[1]; ++j )
 		{
 			jn = j * ncell[0];
@@ -393,11 +428,11 @@ void class_greenfish::greens2d(  )
 
 				if( j == 0 )
 				{
-					rhsG[ij] = pen.X[icell[0] + i];
+					G2D[ij] = pen.X[icell[0] + i];
 				}
 				else
 				{
-					rhsG[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
+					G2D[ij] = -1.0/( ikX[i]*ikX[i] + ikY[j]*ikY[j] );
 				}
 
 			}
@@ -406,7 +441,7 @@ void class_greenfish::greens2d(  )
 	}
 	else
 	{
-		std::cerr << " [greenfish.solve]: Boundary condition configuration unknown."
+		std::cerr << " [greenfish.greens2d]: Boundary condition configuration unknown."
 		          << std::endl;
 	}
 

@@ -326,23 +326,23 @@ void class_greenfish::solve3d(  )
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 				if(lhs_grad)
 				{
-					pen_lhs.X[k] = ikX[i] * rhsG[ijk] * pen_rhs.X[k];
-					pen_lhs.Y[k] = ikY[j] * rhsG[ijk] * pen_rhs.Y[k];
-					pen_lhs.Z[k] = ikZ[k] * rhsG[ijk] * pen_rhs.Z[k];
+					pen_lhs.X[k] = ikX[i] * G3D[ijk] * pen_rhs.X[k];
+					pen_lhs.Y[k] = ikY[j] * G3D[ijk] * pen_rhs.Y[k];
+					pen_lhs.Z[k] = ikZ[k] * G3D[ijk] * pen_rhs.Z[k];
 				}
 				else if(lhs_div)
 				{
-					pen_lhs.X[k] = rhsG[ijk] * ( ikX[i] * pen_rhs.X[k]
+					pen_lhs.X[k] = G3D[ijk] * ( ikX[i] * pen_rhs.X[k]
 					                           + ikY[j] * pen_rhs.Y[k]
 					                           + ikZ[k] * pen_rhs.Z[k] );
 				}
 				else if(lhs_curl)
 				{
-					pen_lhs.X[k] = rhsG[ijk] * ( ikY[j] * pen_rhs.Z[k]
+					pen_lhs.X[k] = G3D[ijk] * ( ikY[j] * pen_rhs.Z[k]
 					                           - ikZ[k] * pen_rhs.Y[k] );
-					pen_lhs.Y[k] = rhsG[ijk] * ( ikZ[k] * pen_rhs.X[k]
+					pen_lhs.Y[k] = G3D[ijk] * ( ikZ[k] * pen_rhs.X[k]
 					                           - ikX[i] * pen_rhs.Z[k] );
-					pen_lhs.Z[k] = rhsG[ijk] * ( ikX[i] * pen_rhs.Y[k]
+					pen_lhs.Z[k] = G3D[ijk] * ( ikX[i] * pen_rhs.Y[k]
 					                           - ikY[j] * pen_rhs.X[k] );
 				}
 				else
@@ -350,17 +350,17 @@ void class_greenfish::solve3d(  )
 					if( lX )
 					{
 //						pen_lhs.X[k] = pen_rhs.X[k];
-						pen_lhs.X[k] = rhsG[ijk] * pen_rhs.X[k];
+						pen_lhs.X[k] = G3D[ijk] * pen_rhs.X[k];
 					}
 					if( lY )
 					{
 //						pen_lhs.Y[k] = pen_rhs.Y[k];
-						pen_lhs.Y[k] = rhsG[ijk] * pen_rhs.Y[k];
+						pen_lhs.Y[k] = G3D[ijk] * pen_rhs.Y[k];
 					}
 					if( lZ )
 					{
 //						pen_lhs.Z[k] = pen_rhs.Z[k];
-						pen_lhs.Z[k] = rhsG[ijk] * pen_rhs.Z[k];
+						pen_lhs.Z[k] = G3D[ijk] * pen_rhs.Z[k];
 					}
 				}
 

@@ -35,12 +35,11 @@ int main(int argc, char* argv[])
 	const double r0 = 1.0;
 	const double m  = 4.0;
 
-
 	const double domain_xmin[3]   = { -2.0, -2.0, -1.0 };
 	const double domain_xmax[3]   = {  2.0,  2.0,  1.0 };
 
 //	int domain_bounds[3] = { 1, 1, 0 };
-	int domain_bounds[3] = { 1, 0, 0 };
+	int domain_bounds[3] = { 0, 0, 1 };
 
 	int domain_ncell[3]  = { 64, 64, 32 };
 //	int domain_ncell[3]  = { 128, 128, 128 };
@@ -165,7 +164,7 @@ int main(int argc, char* argv[])
 
 
 // unbounded-unbounded-periodic
-				r = sqrt(y*y + z*z);
+				r = sqrt(x*x + y*y);
 				if( r < r0 )
 				{
 					Bx[ijk] = pow(1.0 - r*r, m);
@@ -178,7 +177,6 @@ int main(int argc, char* argv[])
 					By[ijk] = 0.0;
 					Bz[ijk] = 0.0;
 				}
-
 
 
 // periodic-periodic-unbounded
@@ -277,9 +275,9 @@ int main(int argc, char* argv[])
 				}
 				else if( r < r0 )
 				{
-					solX = 0.0;
+					solX = - x * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
 					solY = - y * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
-					solZ = - z * (1.0 - pow( 1.0 - pow(r,2), m+1) )/(2.0*(m+1.0)*pow(r,2));
+					solZ = 0.0;
 
 					err += dx[0]*dx[1]*dx[2]* pow( Ax[ijk] - solX, 2);
 					nrm += dx[0]*dx[1]*dx[2]* pow( solX, 2);
@@ -294,9 +292,9 @@ int main(int argc, char* argv[])
 				else
 				{
 
-					solX = 0.0;
+					solX = - x/(2.0*(m+1.0)*pow(r,2));
 					solY = - y/(2.0*(m+1.0)*pow(r,2));
-					solZ = - z/(2.0*(m+1.0)*pow(r,2));
+					solZ = 0.0;
 
 					err += dx[0]*dx[1]* pow( Ax[ijk] - solX , 2);
 					nrm += dx[0]*dx[1]* pow( solX , 2);

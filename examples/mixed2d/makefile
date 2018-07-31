@@ -62,7 +62,7 @@ OBJECTS := $(NAMES:%.cpp=$(OBJ_DIR)/%.o)
 
 $(warning Setup directories...)
 $(shell test -d $(OBJ_DIR) || mkdir $(OBJ_DIR))
-#$(shell test -d output || mkdir output)
+$(shell test -d output || mkdir output)
 $(shell test -e $(LOG) && rm $(LOG))
 
 

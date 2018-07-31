@@ -61,15 +61,26 @@ class_greenfish::~class_greenfish( void )
 		ikZ = NULL;
 	}
 
+	if( zeta != NULL )
+	{
+		delete [] zeta;
+		zeta = NULL;
+	}
+
 	if( mapG != NULL )
 	{
 		delete [] mapG;
 		mapG = NULL;
 	}
-	if( rhsG != NULL )
+	if( G2D != NULL )
 	{
-		delete [] rhsG;
-		rhsG = NULL;
+		delete [] G2D;
+		G2D = NULL;
+	}
+	if( G3D != NULL )
+	{
+		delete [] G3D;
+		G3D = NULL;
 	}
 
 //----------------------------------------------------------------------------//

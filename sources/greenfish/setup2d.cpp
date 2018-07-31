@@ -43,7 +43,7 @@ void class_greenfish::setup2d( int ncell[2], int bound_cond[2], double dx[2] )
 //----------------------------------------------------------------------------//
 // Setup Greens function
 //----------------------------------------------------------------------------//
-	greens2d();
+	greens2d( domain_ncell, domain_bc, domain_dx, regularisation );
 
 //----------------------------------------------------------------------------//
 // Setup pencil topologies
