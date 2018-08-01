@@ -2,7 +2,7 @@
 #
 #  File:        makefile
 #
-#  Description: 
+#  Description: Make file for compiling the GreenFish library
 #
 #------------------------------------------------------------------------------#
 LIBRARY  := libgreenfish.a

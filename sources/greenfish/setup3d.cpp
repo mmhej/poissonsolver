@@ -2,7 +2,7 @@
 /*
   File:         setup3d.cpp
 
-  Description:  
+  Description:  Sets up the greenfish object for 3D simulations
 */
 //----------------------------------------------------------------------------//
 

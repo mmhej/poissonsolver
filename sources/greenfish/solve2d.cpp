@@ -2,7 +2,7 @@
 /*
   File:         solve2d.cpp
 
-  Description:  
+  Description:  Solves the Poisson equation in 2D
 */
 //----------------------------------------------------------------------------//
 void class_greenfish::solve2d(  )

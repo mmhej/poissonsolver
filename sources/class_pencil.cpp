@@ -2,7 +2,7 @@
 /*
   File:         class_pencil.cpp
 
-  Description:  Contains the pencil class
+  Description:  Includes the source code for class_pencil
 */
 //----------------------------------------------------------------------------//
 

@@ -2,7 +2,7 @@
 /*
   File:         greens3d.cpp
 
-  Description:  
+  Description:  Calculates the 3D Greens function and other convolution kernels
 */
 //----------------------------------------------------------------------------//
 void class_greenfish::greens3d( int dom_ncell[3], int dom_bc[3],

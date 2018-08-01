@@ -1,8 +1,8 @@
 //----------------------------------------------------------------------------//
 /*
-  File:         class_greenfpm.hpp
+  File:         class_greenfish.hpp
 
-  Description:  Header file for class_greenfpm.cpp
+  Description:  Header file for class_greenfish
 */
 //----------------------------------------------------------------------------//
 

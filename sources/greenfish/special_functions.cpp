@@ -2,7 +2,7 @@
 /*
   File:         special_functions.cpp
 
-  Description:  
+  Description:  Evaluation of special algebraic functions
 */
 //----------------------------------------------------------------------------//
 

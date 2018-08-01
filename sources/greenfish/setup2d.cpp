@@ -2,7 +2,7 @@
 /*
   File:         setup2d.cpp
 
-  Description:  
+  Description:  Sets up the greenfish object for 2D simulations
 */
 //----------------------------------------------------------------------------//
 

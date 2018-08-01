@@ -2,7 +2,7 @@
 /*
   File:         destructor.cpp
 
-  Description:  
+  Description:  Destructor for class_pencil
 */
 //----------------------------------------------------------------------------//
 class_pencil::~class_pencil( void )

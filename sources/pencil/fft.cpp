@@ -2,7 +2,7 @@
 /*
   File:         fft.cpp
 
-  Description:  Glassman's general N fft see W. E. Ferguson: 
+  Description:  Glassman's general N FFT algorithm see W. E. Ferguson: 
                 "A simple derivation of Glassman's general N fast Fourier 
                 transform", Comp. & Math. With Appls. 1982
 */

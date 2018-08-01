@@ -2,7 +2,7 @@
 /*
   File:         pull.cpp
 
-  Description:  
+  Description:  Pulls the field arrays from the greenfish object
 */
 //----------------------------------------------------------------------------//
 

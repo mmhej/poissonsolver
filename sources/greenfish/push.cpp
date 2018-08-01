@@ -2,7 +2,7 @@
 /*
   File:         push.cpp
 
-  Description:  
+  Description:  Pushes the field arrays to the greenfish object
 */
 //----------------------------------------------------------------------------//
 

@@ -2,7 +2,7 @@
 /*
   File:         partition_setup.cpp
 
-  Description:  
+  Description:  Sets up the domain partition
 */
 //----------------------------------------------------------------------------//
 

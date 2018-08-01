@@ -2,7 +2,7 @@
 /*
   File:         map.cpp
 
-  Description:  
+  Description:  Performs the MPI mapping of the input communication object
 */
 //----------------------------------------------------------------------------//
 

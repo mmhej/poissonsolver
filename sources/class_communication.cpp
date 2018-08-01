@@ -2,7 +2,7 @@
 /*
   File:         class_communication.cpp
 
-  Description:  Contains the communication class
+  Description:  Includes the source code for class_communication
 */
 //----------------------------------------------------------------------------//
 

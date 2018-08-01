@@ -2,7 +2,7 @@
 /*
   File:         class_communication.hpp
 
-  Description:  Header file for class_communication.cpp
+  Description:  Header file for class_communication
 */
 //----------------------------------------------------------------------------//
 

@@ -2,7 +2,7 @@
 /*
   File:         constructor.cpp
 
-  Description:  
+  Description:  Constructor for class_pencil
 */
 //----------------------------------------------------------------------------//
 class_pencil::class_pencil( bool inX, bool inY, bool inZ )

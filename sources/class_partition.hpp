@@ -2,7 +2,7 @@
 /*
   File:         class_partition.hpp
 
-  Description:  Header file for class_partition.cpp
+  Description:  Header file for class_partition
 */
 //----------------------------------------------------------------------------//
 

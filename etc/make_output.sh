@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#------------------------------------------------------------------------------#
+#
+#  File:        make_output.sh
+#
+#  Description: Formats the output of the make file commands
+#
+#------------------------------------------------------------------------------#
 
 # format terminal output
 OK="\033[01;32mok\033[0m"
@@ -8,7 +15,6 @@ FAIL="\033[01;31mfail\033[0m"
 # print command to log file
 echo " " >> $2
 echo $1 >> $2
-
 
 cmd="$1 2>&1"
 

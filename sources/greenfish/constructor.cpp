@@ -2,7 +2,7 @@
 /*
   File:         constructor.cpp
 
-  Description:  
+  Description:  Constructor for class_greenfish
 */
 //----------------------------------------------------------------------------//
 class_greenfish::class_greenfish( void )

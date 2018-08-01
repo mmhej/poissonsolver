@@ -46,7 +46,16 @@
 
   LITERATURE
 --------------------------------------------------------------------------------
-  
-
+  [1] M. M. Hejlesen, G. Winckelmans and J. H. Walther.
+      Non-singular Green's functions for the unbounded Poisson equation in one, 
+      two and three dimensions.
+      arXiv:1704.00704v2 [math.AP], 2018.
+  [2] M. M. Hejlesen, J. T. Rasmussen, P. Chatelain, and J. H. Walther. 
+      A high order solver for the unbounded Poisson equation. 
+      J. Comput. Phys., 252:458--467, 2013.
+  [3] H. J. Spietz, M. M. Hejlesen and J. H. Walther.
+      A regularization method for solving the Poisson equation for mixed 
+      unbounded-periodic domains. 
+      J. Comput. Phys., 356:439--447, 2018.
 
 

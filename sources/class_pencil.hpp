@@ -2,7 +2,7 @@
 /*
   File:         class_pencil.hpp
 
-  Description:  Header file for class_pencil.cpp
+  Description:  Header file for class_pencil
 */
 //----------------------------------------------------------------------------//
 

@@ -2,7 +2,7 @@
 /*
   File:         destructor.cpp
 
-  Description:  
+  Description:  Destructor for class_greenfish
 */
 //----------------------------------------------------------------------------//
 class_greenfish::~class_greenfish( void )

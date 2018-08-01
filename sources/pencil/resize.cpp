@@ -2,7 +2,7 @@
 /*
   File:         resize.cpp
 
-  Description:  
+  Description:  Resizes the pencil arrays
 */
 //----------------------------------------------------------------------------//
 

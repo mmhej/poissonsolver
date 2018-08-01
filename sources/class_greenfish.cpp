@@ -2,7 +2,7 @@
 /*
   File:         class_greenfish.cpp
 
-  Description:  Contains the greenfish
+  Description:  Includes the source code for class_greenfish
 */
 //----------------------------------------------------------------------------//
 

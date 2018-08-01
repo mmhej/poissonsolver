@@ -2,7 +2,7 @@
 /*
   File:         constructor.cpp
 
-  Description:  
+  Description:  Constructor for class_communication
 */
 //----------------------------------------------------------------------------//
 class_communication::class_communication( void ){}

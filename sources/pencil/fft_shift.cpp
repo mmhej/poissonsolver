@@ -2,7 +2,7 @@
 /*
   File:         fft_shift.cpp
 
-  Description:  
+  Description:  Performs an fft shifting of the pencil arrays
 */
 //----------------------------------------------------------------------------//
 
