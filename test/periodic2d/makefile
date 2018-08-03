@@ -2,16 +2,22 @@
 #
 #  File:        makefile
 #
-#  Description: Make file for compiling the Poisson solver library
+#  Description: 
 #
 #------------------------------------------------------------------------------#
-LIBRARY  := libpoissonsolver.a
+PROGRAM  := periodic2d
+
+MAINFILE := ./main.cpp
 
 SRC_DIR  := ./sources
 OBJ_DIR  := ./build
-INC_DIR  := ./include
 
-DEFAULT: $(LIBRARY)
+default: $(PROGRAM)
+
+#------------------------------------------------------------------------------#
+# Dynamic path to Poisson solver library
+#------------------------------------------------------------------------------#
+POISSON = ./../../
 
 #------------------------------------------------------------------------------#
 # Flags and libraries for compiling
@@ -20,19 +26,24 @@ DEFAULT: $(LIBRARY)
 CC = $(shell which mpic++)
 
 # OpenMPI library path
-OPENMPI := $(CC:%/bin/mpic++=%)
+OPENMPI = $(CC:%/bin/mpic++=%)
 
-# C compiler flags
-CCFLAGS  = --std=c++11 -O3
+# c++ compiler flags
+CCFLAGS   = --std=c++11 -O3
+
+# Library flags
+LIBDIRS = -L$(POISSON)
+
+LIBS = -lpoissonsolver
 
 # Include paths
-INCLDIRS = -I$(OBJ_DIR) -I$(INC_DIR) -I$(OPENMPI)/include
+INCLDIRS = -I$(POISSON)/include -I$(OPENMPI)/include
 
 # Preprocessor compiler
 CPP = cpp
 
 # Preprocessor compiler flags
-CPPFLAGS = --std=c++11 -O3 -D__verb
+CPPFLAGS = --std=c++11 -O3 #-D__verb
 
 #------------------------------------------------------------------------------#
 # write scripts
@@ -45,13 +56,15 @@ RUN   := $(SHELL) ./etc/make_output.sh
 # Setup build directories
 #------------------------------------------------------------------------------#
 NAMES   := $(notdir $(wildcard $(SRC_DIR)/*.cpp))
-SOURCES := $(NAMES:%.cpp=$(SRC_DIR)/%.cpp)
-OBJECTS := $(NAMES:%.cpp=$(OBJ_DIR)/%.o)
+SOURCES := $(NAMES:%.cpp=$(SRC_DIR)/%.cpp) 
+OBJECTS := $(NAMES:%.cpp=$(OBJ_DIR)/%.o) 
+#$(OBJ_DIR)/main.o
 
 $(warning Setup directories...)
 $(shell test -d $(OBJ_DIR) || mkdir $(OBJ_DIR))
-$(shell test -d $(INC_DIR) || mkdir $(INC_DIR))
+$(shell test -d output || mkdir output)
 $(shell test -e $(LOG) && rm $(LOG))
+
 
 # Dont delete the given intermediate files
 .SECONDARY:
@@ -60,57 +73,43 @@ $(shell test -e $(LOG) && rm $(LOG))
 # Preprocess
 #------------------------------------------------------------------------------#
 CPCMD = $(CPP) $(CPPFLAGS) $(INCLDIRS) $< $@
-
 $(OBJ_DIR)/%.cpp : $(SRC_DIR)/%.cpp
-	@printf "  PRE-PROCESSING   %-42s" $<; \
+	@printf "  CPP  %-42s" $<; \
 	$(RUN) "$(CPCMD)" $(LOG) "Preprocessing Error"
+
+#$(OBJ_DIR)/main.cpp : $(MAINFILE)
+#	@printf "  CPP  %-42s" $<; \
+#	$(RUN) "$(CPCMD)" $(LOG) "Preprocessing Error"
 
 #------------------------------------------------------------------------------#
 # Compile
 #------------------------------------------------------------------------------#
-COMPILECMD = $(CC) $(CCFLAGS) $(LIBDIRS) $(INCLDIRS) -c -o $@ $< $(LIBS)
-
+COMPILECMD = $(CC) $(CCFLAGS) $(INCLDIRS) $(LIBDIRS) -c -o $@ $< $(LIBS)
 $(OBJ_DIR)/%.o : $(OBJ_DIR)/%.cpp
-	@printf "  COMPILING        %-42s" $<; \
+	@printf "  CC   %-42s" $<; \
 	$(RUN) "$(COMPILECMD)" $(LOG) "Compile Error"
 
 #------------------------------------------------------------------------------#
 # Link
 #------------------------------------------------------------------------------#
-ARCMD = ar crs $@ $(OBJECTS)
-
-$(LIBRARY): $(OBJECTS)
-	@printf "  LINKING          %-42s" "Creating library archive"; \
-	$(RUN) "$(ARCMD)" $(LOG) "Error Creating Archive"; \
-	$(shell cp $(SRC_DIR)/*.hpp $(INC_DIR) 2> $(LOG))
+LINKCMD = $(CC) $(CCFLAGS) $(LIBDIRS) $(INCLDIRS) -o $@ $(OBJECTS) $(LIBS)
+$(PROGRAM): $(OBJECTS)
+	@printf " LINK  %-42s" $@; \
+	$(RUN) "$(LINKCMD)" $(LOG) "Linking Error"
 
 #------------------------------------------------------------------------------#
 # Explicit dependencies
 #------------------------------------------------------------------------------#
-$(OBJ_DIR)/poisson_solver.cpp:\
-  $(SRC_DIR)/poisson_solver.hpp\
-  $(SRC_DIR)/class_partition.hpp\
-  $(SRC_DIR)/class_communication.hpp\
-  $(SRC_DIR)/poisson_solver/*.cpp
-$(OBJ_DIR)/poisson_solver.o:\
-  $(OBJ_DIR)/class_partition.o\
-  $(OBJ_DIR)/class_communication.o\
-  $(OBJ_DIR)/class_pencil.o
+$(OBJ_DIR)/main.cpp:
+# $(SRC_DIR)/*.hpp
+$(OBJ_DIR)/main.o:\
+  $(POISSON)/*.a
 #A
 #B
 #C
-$(OBJ_DIR)/class_communication.cpp:\
-  $(SRC_DIR)/class_communication.hpp\
-  $(SRC_DIR)/class_partition.hpp\
-  $(SRC_DIR)/communication/*.cpp
-$(OBJ_DIR)/class_communication.o:
 #D
 #E
 #F
-$(OBJ_DIR)/class_pencil.cpp:\
-  $(SRC_DIR)/class_pencil.hpp\
-  $(SRC_DIR)/pencil/*.cpp
-$(OBJ_DIR)/class_pencil.o:
 #G
 #H
 #I
@@ -125,10 +124,6 @@ $(OBJ_DIR)/class_pencil.o:
 #R
 #S
 #T
-$(OBJ_DIR)/class_partition.cpp:\
-  $(SRC_DIR)/class_partition.hpp\
-  $(SRC_DIR)/partition/*.cpp
-$(OBJ_DIR)/class_partition.o:
 #U
 #V
 #W
@@ -139,21 +134,10 @@ $(OBJ_DIR)/class_partition.o:
 #------------------------------------------------------------------------------#
 # Clean
 #------------------------------------------------------------------------------#
-#clean:
-#	rm -fr $(OBJ_DIR)
-#	rm -f  $(LOG)
-
 clean:
 	rm -fr $(OBJ_DIR)
-	rm -f  $(LIBRARY)
+	rm -f  $(PROGRAM)
 	rm -f  $(LOG)
 
-test: $(LIBRARY)
-	cd test/unbounded2d/ && make run
-	cd test/unbounded3d/ && make run
-	cd test/periodic2d/ && make run
-	cd test/periodic3d/ && make run
-	cd test/mixed2d/ && make run
-	cd test/mixed3d/ && make run
-
-
+run: $(PROGRAM)
+	mpirun -np 4 $(PROGRAM)
