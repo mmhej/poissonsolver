@@ -112,22 +112,22 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	poisson_solver green;
-	green.lhs_curl       = true; // specify lhs operator
-//	green.regularisation = 6;    // regularisation order
-//	green.rhs_reproject  = true; // reprojection of rhs field
-	green.setup3d( domain_ncell, domain_bounds, dx );
+	poisson_solver poisson;
+	poisson.lhs_curl       = true; // specify lhs operator
+//	poisson.regularisation = 6;    // regularisation order
+//	poisson.rhs_reproject  = true; // reprojection of rhs field
+	poisson.setup3d( domain_ncell, domain_bounds, dx );
 
 //----------------------------------------------------------------------------//
 // Get mesh info
 //----------------------------------------------------------------------------//
-	ncell[0] = green.partition[rank].ncell[0];
-	ncell[1] = green.partition[rank].ncell[1];
-	ncell[2] = green.partition[rank].ncell[2];
+	ncell[0] = poisson.partition[rank].ncell[0];
+	ncell[1] = poisson.partition[rank].ncell[1];
+	ncell[2] = poisson.partition[rank].ncell[2];
 
-	icell[0] = green.partition[rank].icell[0];
-	icell[1] = green.partition[rank].icell[1];
-	icell[2] = green.partition[rank].icell[2];
+	icell[0] = poisson.partition[rank].icell[0];
+	icell[1] = poisson.partition[rank].icell[1];
+	icell[2] = poisson.partition[rank].icell[2];
 
 	xmin[0]  = domain_xmin[0] + dx[0] * double(icell[0]);
 	xmin[1]  = domain_xmin[1] + dx[1] * double(icell[1]);
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.push( Bx, By, Bz, NULL, NULL, NULL);
+	poisson.push( Bx, By, Bz, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.solve3d( );
+	poisson.solve3d( );
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Map back to ClientArray
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	green.pull( Bx, By, Bz, Ax, Ay, Az );
+	poisson.pull( Bx, By, Bz, Ax, Ay, Az );
 
 //----------------------------------------------------------------------------//
 // Calculate error integral

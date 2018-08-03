@@ -148,6 +148,17 @@ clean:
 	rm -f  $(LIBRARY)
 	rm -f  $(LOG)
 
+clean_all:
+	rm -fr $(OBJ_DIR)
+	rm -f  $(LIBRARY)
+	rm -f  $(LOG)
+	cd test/unbounded2d/ && make clean
+	cd test/unbounded3d/ && make clean
+	cd test/periodic2d/ && make clean
+	cd test/periodic3d/ && make clean
+	cd test/mixed2d/ && make clean
+	cd test/mixed3d/ && make clean
+
 test: $(LIBRARY)
 	cd test/unbounded2d/ && make run
 	cd test/unbounded3d/ && make run
