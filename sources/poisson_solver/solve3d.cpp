@@ -54,7 +54,7 @@ void poisson_solver::solve3d(  )
 		}
 		else
 		{
-			std::cerr << " [greenfish.solve2d]: "
+			std::cerr << " [poisson_solver.solve2d]: "
 			          << "Error rhs fields have not been pushed correctly for grad option" 
 			          << std::endl;
 			return;
@@ -68,7 +68,7 @@ void poisson_solver::solve3d(  )
 		}
 		else
 		{
-			std::cerr << " [greenfish.solve2d]: "
+			std::cerr << " [poisson_solver.solve2d]: "
 			          << "Error rhs fields have not been pushed correctly for div option" 
 			          << std::endl;
 			return;
@@ -84,7 +84,7 @@ void poisson_solver::solve3d(  )
 		}
 		else
 		{
-			std::cerr << " [greenfish.solve2d]: "
+			std::cerr << " [poisson_solver.solve2d]: "
 			          << "Error rhs fields have not been pushed correctly for curl option" 
 			          << std::endl;
 			return;

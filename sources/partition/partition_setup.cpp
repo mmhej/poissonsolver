@@ -60,7 +60,7 @@ std::vector<class_partition> partition_setup( int pencil_dir,
 	}
 	else
 	{
-		std::cerr << " [greenfish.partition_setup3d]: Error." << std::endl;
+		std::cerr << " [poisson_solver.partition_setup3d]: Error." << std::endl;
 		exit(EXIT_FAILURE);
 	}
 

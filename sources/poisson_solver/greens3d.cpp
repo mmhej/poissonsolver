@@ -2,7 +2,8 @@
 /*
   File:         greens3d.cpp
 
-  Description:  Calculates the 3D Greens function and other convolution kernels
+  Description:  Calculates the 3D Greens function and other 
+  convolution kernels
 */
 //----------------------------------------------------------------------------//
 void poisson_solver::greens3d( int dom_ncell[3], int dom_bc[3],
@@ -518,19 +519,19 @@ void poisson_solver::greens3d( int dom_ncell[3], int dom_bc[3],
 	{
 		if( dom_bc[0] + dom_bc[1] + dom_bc[2] == 1 )
 		{
-			std::cerr << " [greenfish.greens3d]: For unbounded-unbounded-periodic "
+			std::cerr << " [poisson_solver.greens3d]: For unbounded-unbounded-periodic "
 			          << "domains the z-direction must be the periodic direction"
 			          << std::endl;
 		}
 		else if( dom_bc[0] + dom_bc[1] + dom_bc[2] == 2 )
 		{
-			std::cerr << " [greenfish.greens3d]: For unbounded-periodic-periodic "
+			std::cerr << " [poisson_solver.greens3d]: For unbounded-periodic-periodic "
 			          << "domains the z-direction must be the unbounded direction"
 			          << std::endl;
 		}
 		else
 		{
-			std::cerr << " [greenfish.greens3d]: Boundary condition configuration unknown."
+			std::cerr << " [poisson_solver.greens3d]: Boundary condition configuration unknown."
 			          << std::endl;
 		}
 	}

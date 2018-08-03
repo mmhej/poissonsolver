@@ -8,7 +8,7 @@
 poisson_solver::~poisson_solver( void )
 {
 
-//	std::cout << " [greenfish]: Destructing greenfish object." << std::endl;
+//	std::cout << " [poisson_solver]: Destructing Poisson solver object." << std::endl;
 
 //----------------------------------------------------------------------------//
 // De-allocate arrays from memory

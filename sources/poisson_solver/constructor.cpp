@@ -16,7 +16,7 @@ poisson_solver::poisson_solver( void )
 
 	if(rank == 0)
 	{
-		std::cout << " [greenfish]: Constructing greenfish object." << std::endl;
+		std::cout << " [poisson_solver]: Constructing Poisson solver object." << std::endl;
 	}
 */
 

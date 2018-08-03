@@ -1,6 +1,6 @@
 ================================================================================
 
-  GREENFISH
+  Poisson solver
    a Green's function based spectral solver for the Poisson equation for 
    unbounded and/or periodic domains
 
@@ -11,9 +11,9 @@
 
   INTRODUCTION
 --------------------------------------------------------------------------------
-  GreenFish is a library developed for solving the Poisson equation 
+  The Poisson solver library developed for solving the Poisson equation 
   lap(A) = -B for unbounded and/or periodic domains with spectral accuracy.
-  The GreenFish solver is based regularised Green's function solutions which 
+  The Poisson solver is based regularised Green's function solutions which 
   is efficiently computed by an FFT methodology to perform the convolutions.
 
   The library is distributed under a GNU General Public License by which the 
@@ -34,7 +34,7 @@
 
   LANGUAGE INTERFACES
 --------------------------------------------------------------------------------
-  At the present moment the only interface to the GreenFish library is in C++.
+  At the present moment the only interface to the Poisson solver library is in C++.
   Future plans include interfaces to C, Fortran and Python.
 
 
