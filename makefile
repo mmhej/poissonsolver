@@ -150,6 +150,7 @@ clean:
 
 clean_all:
 	rm -fr $(OBJ_DIR)
+	rm -fr $(INC_DIR)
 	rm -f  $(LIBRARY)
 	rm -f  $(LOG)
 	cd test/unbounded2d/ && make clean
@@ -159,7 +160,8 @@ clean_all:
 	cd test/mixed2d/ && make clean
 	cd test/mixed3d/ && make clean
 
-test: $(LIBRARY)
+test_all:
+	make
 	cd test/unbounded2d/ && make run
 	cd test/unbounded3d/ && make run
 	cd test/periodic2d/ && make run
