@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 	if(rank == 0)
 	{
 		std::cout << std::endl;
-		std::cout << "INITIATING TEST... " << std::endl;
+		std::cout << "TESTING MIXED PERIODIC-UNBOUNDED DOMAIN IN 3D... " << std::endl;
 		std::cout << std::endl;
 		std::cout << "Number of processors intiated: " << nproc << std::endl;
 	}
