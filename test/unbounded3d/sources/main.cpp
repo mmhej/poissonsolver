@@ -41,6 +41,8 @@ int main(int argc, char* argv[])
 
 //	int domain_ncell[3]  = { 32, 64, 64 };
 	int domain_ncell[3]  = { 64, 128, 128 };
+//	int domain_ncell[3]  = { 128, 256, 256 };
+
 
 //----------------------------------------------------------------------------//
 // Variables

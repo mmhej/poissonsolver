@@ -34,14 +34,21 @@
 
   LANGUAGE INTERFACES
 --------------------------------------------------------------------------------
-  At the present moment the only interface to the Poisson solver library is in C++.
-  Future plans include interfaces to C, Fortran and Python.
+  At the present moment the only interface to the Poisson solver library is C++.
+  Future plans may include interfaces to other languages such as C, Fortran and 
+  Python.
+
+
+  TESTS AND VALIDATION
+--------------------------------------------------------------------------------
+  In the "test" directory a number of validating tests are included which for 
+  now also serves as the main tutorial .
 
 
   EXAMPLES AND TUTORIALS
 --------------------------------------------------------------------------------
-  In the "examples" directory a number of examples are included which may serve 
-  for now serve as the main tutorial.
+  In the "examples" directory a number of examples on applications are being 
+  included.
 
 
   LITERATURE
