@@ -1,7 +1,6 @@
 # Building and working directories
 *build/
 *include/
-*output/
 
 # Ignored file types
 *.a

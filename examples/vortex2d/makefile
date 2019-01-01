@@ -100,10 +100,12 @@ $(PROGRAM): $(OBJECTS)
 #------------------------------------------------------------------------------#
 # Explicit dependencies
 #------------------------------------------------------------------------------#
-$(OBJ_DIR)/main.cpp:
-# $(SRC_DIR)/*.hpp
+$(OBJ_DIR)/main.cpp:\
+  $(SRC_DIR)/*.hpp
 $(OBJ_DIR)/main.o:\
-  $(POISSON)/*.a
+  $(POISSON)/*.a\
+  $(OBJ_DIR)/class_topology.o\
+  $(OBJ_DIR)/module_output.o
 #A
 #B
 #C
@@ -119,11 +121,21 @@ $(OBJ_DIR)/main.o:\
 #M
 #N
 #O
+$(OBJ_DIR)/module_output.cpp:\
+  $(SRC_DIR)/module_output.hpp\
+  $(SRC_DIR)/class_topology.hpp\
+  $(SRC_DIR)/output/*.cpp
+$(OBJ_DIR)/module_output.o:\
+  $(OBJ_DIR)/class_topology.o
 #P
 #Q
 #R
 #S
 #T
+$(OBJ_DIR)/class_topology.cpp:\
+  $(SRC_DIR)/class_topology.hpp\
+  $(SRC_DIR)/topology/*.cpp
+$(OBJ_DIR)/class_topology.o:
 #U
 #V
 #W

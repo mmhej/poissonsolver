@@ -20,6 +20,8 @@
 #include "mpi.h"
 #include "poisson_solver.hpp"
 // Internal
+#include "class_topology.hpp"
+#include "module_output.hpp"
 
 //----------------------------------------------------------------------------//
 // MAIN PROGRAM
@@ -40,8 +42,8 @@ int main(int argc, char* argv[])
 
 	int domain_bounds[2] = {0,0};
 
-//	int domain_ncell[2]  = { 64, 64};
-	int domain_ncell[2]  = { 128, 128};
+//	int domain_ncell[2]  = { 64, 64 };
+	int domain_ncell[2]  = { 128, 128 };
 
 	int     ntime     = 0;
 	int     itime     = 0;
@@ -59,14 +61,24 @@ int main(int argc, char* argv[])
 	int     ncell[2], icell[2];
 	double  dx[2], xmin[2], xmax[2];
 
-	double * velx;
-	double * vely;
+	int stime;
 
-	double * vort;
+	class_topology topo;
+
+	double * mesh_velx;
+	double * mesh_vely;
+	double * mesh_vort;
 
 	std::ostringstream str;
+	std::string dir, tag;
 	std::string filename;
 	std::string ifilename;
+
+	std::vector<double> part_posx;
+	std::vector<double> part_posy;
+	std::vector<double> part_circ;
+	std::vector<double> part_velx;
+	std::vector<double> part_vely;
 
 //----------------------------------------------------------------------------//
 // Initialize the OpenMPI library
@@ -111,26 +123,34 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 // Get mesh info
 //----------------------------------------------------------------------------//
-	ncell[0] = poisson.partition[rank].ncell[0];
-	ncell[1] = poisson.partition[rank].ncell[1];
+	topo.ncell[0] = poisson.partition[rank].ncell[0];
+	topo.ncell[1] = poisson.partition[rank].ncell[1];
 
-	icell[0] = poisson.partition[rank].icell[0];
-	icell[1] = poisson.partition[rank].icell[1];
+	topo.icell[0] = poisson.partition[rank].icell[0];
+	topo.icell[1] = poisson.partition[rank].icell[1];
 
-	xmin[0]  = domain_xmin[0] + dx[0] * double(poisson.partition[rank].icell[0]);
-	xmin[1]  = domain_xmin[1] + dx[1] * double(poisson.partition[rank].icell[1]);
+	topo.xmin[0]  = domain_xmin[0] + dx[0] * double(poisson.partition[rank].icell[0]);
+	topo.xmin[1]  = domain_xmin[1] + dx[1] * double(poisson.partition[rank].icell[1]);
+
+	topo.dx[0] = dx[0];
+	topo.dx[1] = dx[1];
+
+	topo.domain_ncell[0] = domain_ncell[0];
+	topo.domain_ncell[1] = domain_ncell[1];
+
 
 //----------------------------------------------------------------------------//
-// Allocate fields
+// Initiate fields and particles
 //----------------------------------------------------------------------------//
-	velx = new double[ncell[0] * ncell[1]]();
-	vely = new double[ncell[0] * ncell[1]]();
+	ncell[0] = topo.ncell[0]; ncell[1] = topo.ncell[1];
+	dx[0]    = topo.dx[0];    dx[1]    = topo.dx[1];
+	xmin[0]  = topo.xmin[0];  xmin[1]  = topo.xmin[1];
 
-	vort = new double[ncell[0] * ncell[1]]();
+	mesh_velx = new double[ncell[0] * ncell[1]]();
+	mesh_vely = new double[ncell[0] * ncell[1]]();
 
-//----------------------------------------------------------------------------//
-// Initiate fields
-//----------------------------------------------------------------------------//
+	mesh_vort = new double[ncell[0] * ncell[1]]();
+
 	for (j = 0; j < ncell[1]; ++j )
 	{
 		jn = j * ncell[0];
@@ -143,23 +163,32 @@ int main(int argc, char* argv[])
 			r = sqrt( pow(ratio*x,2) + pow(y,2));
 			if(r < 0.25*dx[0])
 			{
-				vort[ij] = 1.0;
+				mesh_vort[ij] = 1.0;
+
+				part_circ.push_back( mesh_vort[ij] * dx[0]*dx[1] );
+				part_posx.push_back( x );
+				part_posy.push_back( y );
+
 			}
 			else if( r < r0 )
 			{
-				vort[ij] = ( 1.0 - exp( -c*r0/r * exp( 1.0/(r/r0 - 1.0) ) ) );
+				mesh_vort[ij] = ( 1.0 - exp( -c*r0/r * exp( 1.0/(r/r0 - 1.0) ) ) );
+
+				part_circ.push_back( mesh_vort[ij] * dx[0]*dx[1] );
+				part_posx.push_back( x );
+				part_posy.push_back( y );
+
 			}
 			else
 			{
-				vort[ij] = 0.0;
+				mesh_vort[ij] = 0.0;
 			}
+
 		}
 	}
 
-//----------------------------------------------------------------------------//
-// Initiate particles
-//----------------------------------------------------------------------------//
 
+	topo.npart = part_circ.size();
 
 //----------------------------------------------------------------------------//
 // Simulation loop
@@ -184,6 +213,7 @@ int main(int argc, char* argv[])
 //----------------------------------------------------------------------------//
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Push to poisson_solver array
+// TO DO: Change to handle ghost cells
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 #ifdef __verb
 			MPI_Barrier(MPI_COMM_WORLD);
@@ -191,7 +221,7 @@ int main(int argc, char* argv[])
 			MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-			poisson.push( NULL, NULL, vort, NULL, NULL, NULL);
+			poisson.push( NULL, NULL, mesh_vort, NULL, NULL, NULL);
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
@@ -206,6 +236,7 @@ int main(int argc, char* argv[])
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Map back to ClientArray
+// TO DO: Change to handle ghost cells
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 #ifdef __verb
 			MPI_Barrier(MPI_COMM_WORLD);
@@ -213,7 +244,7 @@ int main(int argc, char* argv[])
 			MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-			poisson.pull( NULL, NULL, NULL, velx, vely, NULL );
+			poisson.pull( NULL, NULL, NULL, mesh_velx, mesh_vely, NULL );
 
 
 //----------------------------------------------------------------------------//
@@ -235,8 +266,6 @@ int main(int argc, char* argv[])
 // Diagnostics (here to ensure that all values correspond)
 //----------------------------------------------------------------------------//
 
-
-
 //----------------------------------------------------------------------------//
 // Output field
 //----------------------------------------------------------------------------//
@@ -246,124 +275,36 @@ int main(int argc, char* argv[])
 				MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Individual .vti files
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-				str << std::setw(2) << std::setfill('0') << rank;
-				filename = "./output/mesh_P" + str.str() + ".vti";
-				str.str(""); // clear str
-				std::ofstream vtifile( filename.c_str() );
-			//	vtifile.precision(16);
-				vtifile.precision(8);
-				if(!vtifile.is_open())
-				{
-					std::cerr << "ERROR: cannot open vtifile." << std::endl;
-					return 0;
-				}
-				vtifile << "<?xml version='1.0'?>" << "\n";
-				vtifile << "<VTKFile type='ImageData' version='0.1' byte_order='LittleEndian'>" << "\n";
-				vtifile << "  <ImageData WholeExtent='" 
-						<< "  " << icell[0] << "  " << icell[0] + ncell[0]
-						<< "  " << icell[1] << "  " << icell[1] + ncell[1]
-						<< "  " <<        0 << "  " << 1
-						<<"' Ghostlevel='0' Origin='"
-						<< "  " << domain_xmin[0]
-						<< "  " << domain_xmin[1]
-						<< "  " << 0.0
-						<< "' Spacing='"
-						<< "  " << dx[0]
-						<< "  " << dx[1]
-						<< "  " << 0.0 << "'>" << "\n";
-				vtifile << "    <Piece Extent='"
-						<< "  " << icell[0] << "  " << icell[0] + ncell[0]
-						<< "  " << icell[1] << "  " << icell[1] + ncell[1]
-						<< "  " <<        0 << "  " << 1
-						<< "'>" << "\n";
-				vtifile << "      <PointData>" << "\n";
-				vtifile << "      </PointData>" << "\n";
-				vtifile << "      <CellData>" << "\n";
-				vtifile << "        <DataArray type='Float64' Name='vorticity' NumberOfComponents='1'  format='ascii'>" << "\n";
-				for(ij = 0; ij < ncell[0]*ncell[1]; ++ij)
-				{
-					vtifile << std::scientific << std::setw(17) << vort[ij];
-				}
-				vtifile << "\n        </DataArray>" << "\n";
-				vtifile << "        <DataArray type='Float64' Name='velocity' NumberOfComponents='2'  format='ascii'>" << "\n";
-				for(ij = 0; ij < ncell[0]*ncell[1]; ++ij)
-				{
-					vtifile << std::scientific << std::setw(17) << velx[ij] << std::setw(17) << vely[ij];
-				}
-				vtifile << "\n        </DataArray>" << "\n";
-				vtifile << "      </CellData>" << "\n";
-				vtifile << "    </Piece>" << "\n";
-				vtifile << "  </ImageData>" << "\n";
-				vtifile << "</VTKFile>" << "\n";
-				vtifile.close();
-
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-// Main .pvti file
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-				filename = "./output/mesh.pvti";
-				std::ofstream pvtifile;
-
-				str << std::setw(2) << std::setfill('0') << rank;
-				ifilename = "./mesh_P" + str.str() + ".vti";
+				str << std::setw(5) << std::setfill('0') << itime;
+				dir = "./output";
+				tag = "mesh_T" + str.str();
 				str.str(""); // clear str
 
-				if( rank == 0 )
-				{
-					pvtifile.open( filename.c_str() );
-				//	pvtifile.precision(16);
-					pvtifile.precision(8);
-					if(!pvtifile.is_open())
-					{
-						std::cerr << "ERROR: cannot open vtifile." << std::endl;
-						return 0;
-					}
-					pvtifile << "<?xml version='1.0'?>" << "\n";
-					pvtifile << "<VTKFile type='PImageData' version='0.1' byte_order='LittleEndian'>" << "\n";
-					pvtifile << "<PImageData WholeExtent='" 
-							<< "  " << 0 << "  " << domain_ncell[0]
-							<< "  " << 0 << "  " << domain_ncell[1]
-							<< "  " << 0 << "  " << 1
-							<<"' Ghostlevel='0' Origin='"
-							<< "  " << domain_xmin[0]
-							<< "  " << domain_xmin[1]
-							<< "  " << 0.0
-							<< "' Spacing='"
-							<< "  " << dx[0]
-							<< "  " << dx[1]
-							<< "  " << 0.0 << "'>" << "\n";
-					pvtifile << "  <PCellData Vectors='output'>" << "\n";
-					pvtifile << "    <PDataArray type='Float64' Name='vorticity' NumberOfComponents='1' format='appended' offset='0'/>" << "\n";
-					pvtifile << "    <PDataArray type='Float64' Name='velocity' NumberOfComponents='2' format='appended' offset='0'/>" << "\n";
-					pvtifile << "  </PCellData>" << "\n";
-					pvtifile.close();
-				}
+				output_mesh_vtk( dir, tag, topo, mesh_vort );
 
-				for(i = 0; i < nproc; ++i)
-				{
-					if( rank == i )
-					{
-						pvtifile.open( filename.c_str(), std::ofstream::app );
-						pvtifile << "  <Piece Extent='"
-									   << "  " << icell[0] << "  " << icell[0] + ncell[0]
-									   << "  " << icell[1] << "  " << icell[1] + ncell[1]
-									   << "  " <<        0 << "  " << 1
-									   << "' Source='" << ifilename << "'/>" << "\n";
-						if(rank == nproc - 1)
-						{
-							pvtifile << "</PImageData>" << "\n";
-							pvtifile << "</VTKFile>" << "\n";
-						}
-						pvtifile.close();
-					}
-					MPI_Barrier(MPI_COMM_WORLD);
-				}
+//----------------------------------------------------------------------------//
+// Output particles
+//----------------------------------------------------------------------------//
+				str << std::setw(5) << std::setfill('0') << itime;
+				dir = "./output";
+				tag = "part_T" + str.str();
+				str.str(""); // clear str
+
+				output_particles( dir, tag, topo, part_posx, part_posy, part_circ );
+
 
 			} // stime if
 
+//----------------------------------------------------------------------------//
+// Advance particles
+//----------------------------------------------------------------------------//
+
+
+
+
 		} // RK loop
+
+		itime++;
 
 	} // simulation loop
 
