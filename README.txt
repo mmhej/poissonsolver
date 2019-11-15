@@ -4,7 +4,7 @@
    a Green's function based spectral solver for the Poisson equation for 
    unbounded and/or periodic domains
 
-   Written by Mads Mølholm Hejlesen (2018)
+   Written by Mads Mølholm Hejlesen (2018-2019)
 
 ================================================================================
 
@@ -32,11 +32,11 @@
       used on another platform.
 
 
-  LANGUAGE INTERFACES
+  LANGUAGES
 --------------------------------------------------------------------------------
-  At the present moment the only interface to the Poisson solver library is C++.
-  Future plans may include interfaces to other languages such as C, Fortran and 
-  Python.
+  The directory includes a C++ and a Fortran 90 version of the Poisson solver 
+  library. 
+  Future plans may include interfaces to other languages such as Python.
 
 
   TESTS AND VALIDATION
