@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 #endif
 
 	poisson_solver poisson;
-	poisson.setup3d( domain_ncell, domain_bounds, dx, 8 );
+	poisson.setup3d( domain_ncell, domain_bounds, dx );
 	poisson.set_return_curl( true ); // specify lhs operator
 //	poisson.set_regularisation( 6 );    // regularisation order
 //	poisson.set_reprojection( true ); // reprojection of rhs field
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	poisson.push( Bx, By, Bz);
+	poisson.push( Bx, By, Bz );
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 // Solve
