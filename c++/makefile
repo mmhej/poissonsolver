@@ -171,3 +171,8 @@ test_all:
 	cd test/mixed_ffp3d/ && make run
 	cd test/mixed_ppf3d/ && make run
 
+test_one:
+	make
+	cd test/unbounded2d/ && make run
+
+

@@ -54,8 +54,10 @@ void poisson_solver::setup2d( int ncell[2], int bound_cond[2], double dx[2],
 //----------------------------------------------------------------------------//
 // Setup pencil topologies
 //----------------------------------------------------------------------------//
-	xpen = partition_setup( 0, domain_ncell, domain_bc, domain_dx, true, false, false );
-	ypen = partition_setup( 1, domain_ncell, domain_bc, domain_dx, true, false, false );
+	xpen = partition_setup( 0, domain_ncell, domain_bc, domain_dx, 
+	                        true, false, false );
+	ypen = partition_setup( 1, domain_ncell, domain_bc, domain_dx, 
+	                        true, false, false );
 
 //----------------------------------------------------------------------------//
 // Construct communicators between topologies

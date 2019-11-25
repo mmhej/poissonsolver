@@ -7,8 +7,9 @@
 //----------------------------------------------------------------------------//
 class_communication::class_communication( void ){}
 
-class_communication::class_communication( std::vector<class_partition> partition_send, 
-                                          std::vector<class_partition> partition_recv )
+class_communication::class_communication( 
+                                  std::vector<class_partition> partition_send, 
+                                  std::vector<class_partition> partition_recv )
 {
 
 //----------------------------------------------------------------------------//
@@ -250,9 +251,12 @@ class_communication::class_communication( std::vector<class_partition> partition
 			jmin[1] = partition_send[jproc].icell[1];
 			jmin[2] = partition_send[jproc].icell[2];
 
-			jmax[0] = partition_send[jproc].icell[0] + partition_send[jproc].ncell[0] - 1;
-			jmax[1] = partition_send[jproc].icell[1] + partition_send[jproc].ncell[1] - 1;
-			jmax[2] = partition_send[jproc].icell[2] + partition_send[jproc].ncell[2] - 1;
+			jmax[0] = partition_send[jproc].icell[0] 
+			        + partition_send[jproc].ncell[0] - 1;
+			jmax[1] = partition_send[jproc].icell[1] 
+			        + partition_send[jproc].ncell[1] - 1;
+			jmax[2] = partition_send[jproc].icell[2] 
+			        + partition_send[jproc].ncell[2] - 1;
 
 			imin[0] = partition_recv[iproc].icell[0];
 			imin[1] = partition_recv[iproc].icell[1];
@@ -516,7 +520,6 @@ class_communication::class_communication( std::vector<class_partition> partition
 		}
 
 	}
-
 
 //----------------------------------------------------------------------------//
 // Output

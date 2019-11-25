@@ -116,7 +116,6 @@ int main(int argc, char* argv[])
 	poisson_solver poisson;
 	poisson.setup3d( domain_ncell, domain_bounds, dx );
 	poisson.set_return_curl( true ); // specify lhs operator
-//	poisson.set_regularisation( 6 );    // regularisation order
 //	poisson.set_reprojection( true ); // reprojection of rhs field
 
 //----------------------------------------------------------------------------//

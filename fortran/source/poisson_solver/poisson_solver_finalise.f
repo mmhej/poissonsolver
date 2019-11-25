@@ -60,6 +60,20 @@ IMPLICIT NONE
 		DEALLOCATE(poisson_solver%G3D)
 	END IF
 
+	IF ( ALLOCATED(poisson_solver%partition) ) THEN
+		DEALLOCATE(poisson_solver%partition)
+	END IF
+	IF ( ALLOCATED(poisson_solver%xpen) ) THEN
+		DEALLOCATE(poisson_solver%xpen)
+	END IF
+	IF ( ALLOCATED(poisson_solver%ypen) ) THEN
+		DEALLOCATE(poisson_solver%ypen)
+	END IF
+	IF ( ALLOCATED(poisson_solver%zpen) ) THEN
+		DEALLOCATE(poisson_solver%zpen)
+	END IF
+
+
 !------------------------------------------------------------------------------!
 ! Return
 !------------------------------------------------------------------------------!

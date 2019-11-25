@@ -429,8 +429,8 @@ void poisson_solver::greens2d( int dom_ncell[3], int dom_bc[3],
 	}
 	else
 	{
-		std::cerr << " [poisson_solver.greens2d]: Boundary condition configuration unknown."
-		          << std::endl;
+		std::cerr << " [poisson_solver.greens2d]: " 
+		          << "Boundary condition configuration unknown." << std::endl;
 	}
 
 

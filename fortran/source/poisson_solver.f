@@ -75,6 +75,19 @@ IMPLICIT NONE
 	TYPE(class_poisson_solver) :: poisson_solver
 
 !------------------------------------------------------------------------------!
+! Module interfaces
+!------------------------------------------------------------------------------!
+	INTERFACE poisson_solver_push
+		MODULE PROCEDURE poisson_solver_push_1pointer3d
+		MODULE PROCEDURE poisson_solver_push_3array
+	END INTERFACE
+
+	INTERFACE poisson_solver_pull
+		MODULE PROCEDURE poisson_solver_pull_1pointer3d
+		MODULE PROCEDURE poisson_solver_pull_3array
+	END INTERFACE
+
+!------------------------------------------------------------------------------!
 ! Include subroutines
 !------------------------------------------------------------------------------!
 CONTAINS

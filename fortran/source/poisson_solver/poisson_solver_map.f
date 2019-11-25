@@ -347,15 +347,15 @@ include 'mpif.h'
 
 		END IF
 
-!		CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
-	END DO ! ncomm
-
 !------------------------------------------------------------------------------!
 ! De-allocate send buffers
 !------------------------------------------------------------------------------!
-	IF ( ASSOCIATED(buffer_send%val) ) THEN
-		DEALLOCATE( buffer_send%val )
-	END IF
+		IF ( ASSOCIATED(buffer_send%val) ) THEN
+			DEALLOCATE( buffer_send%val )
+		END IF
+
+!		CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
+	END DO ! ncomm
 
 !------------------------------------------------------------------------------!
 ! Resize arrays

@@ -63,9 +63,11 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Setup real topology
 !------------------------------------------------------------------------------!
-	CALL partition_setup( 1, poisson_solver%ncell, poisson_solver%bc, &
-	                         poisson_solver%dx, .FALSE., .FALSE., .FALSE., &
-	                         poisson_solver%partition )
+	IF( .NOT.ALLOCATED(poisson_solver%partition) )THEN
+		CALL partition_setup( 1, poisson_solver%ncell, poisson_solver%bc, &
+		                         poisson_solver%dx, .FALSE., .FALSE., .FALSE., &
+		                         poisson_solver%partition )
+	END IF
 
 !------------------------------------------------------------------------------!
 ! Setup Greens function

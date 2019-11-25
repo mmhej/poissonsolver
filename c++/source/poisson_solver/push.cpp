@@ -266,17 +266,17 @@ void poisson_solver::push( double * real_rhsX, double * real_rhsY,
 
 		}
 
-//		MPI_Barrier(MPI_COMM_WORLD);
-	} // ncomm
-
 //----------------------------------------------------------------------------//
 // De-allocate send buffers
 //----------------------------------------------------------------------------//
-	if( buffer_send != NULL)
-	{
-		delete [] buffer_send;
-		buffer_send = NULL;
-	}
+		if( buffer_send != NULL)
+		{
+			delete [] buffer_send;
+			buffer_send = NULL;
+		}
+
+//		MPI_Barrier(MPI_COMM_WORLD);
+	} // ncomm
 
 //----------------------------------------------------------------------------//
 // Resize arrays
