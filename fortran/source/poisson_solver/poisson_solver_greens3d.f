@@ -166,8 +166,8 @@ include 'mpif.h'
 				DO i = 0,ncell(1)-1
 					ijk = kjn + i
 					arg = 0.5_MK * sigma**2 * ( AIMAG(poisson_solver%ikX(i))**2 &
-						                        + AIMAG(poisson_solver%ikY(j))**2 &
-						                        + AIMAG(poisson_solver%ikZ(j))**2 )
+					                          + AIMAG(poisson_solver%ikY(j))**2 &
+					                          + AIMAG(poisson_solver%ikZ(k))**2 )
 					sum = 0.0_MK
 					DO n = 1,mreg/2
 						sum = sum + c(n) * arg**(n-1)

@@ -110,6 +110,8 @@ CONTAINS
 #include "poisson_solver/poisson_solver_push.f"
 #include "poisson_solver/poisson_solver_pull.f"
 
+#include "poisson_solver/poisson_solver_smooth3d.f"
+
 #include "poisson_solver/poisson_solver_finalise.f"
 
 !------------------------------------------------------------------------------!
