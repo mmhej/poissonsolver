@@ -88,19 +88,20 @@ include 'mpif.h'
 	CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 #endif
 
-	CALL poisson_solver_setup2d( domain_ncell, domain_bounds, dx, 0 )
+	CALL poisson_solver_initialise( 1 )
+	CALL poisson_solver_setup2d( 1, domain_ncell, domain_bounds, dx, 0 )
 
 !------------------------------------------------------------------------------!
 ! Get mesh info
 !------------------------------------------------------------------------------!
-	ncell(1) = poisson_solver%partition(rank)%ncell(1)
-	ncell(2) = poisson_solver%partition(rank)%ncell(2)
+	ncell(1) = poisson_solver(1)%partition(rank)%ncell(1)
+	ncell(2) = poisson_solver(1)%partition(rank)%ncell(2)
 
-	icell(1) = poisson_solver%partition(rank)%icell(1)
-	icell(2) = poisson_solver%partition(rank)%icell(2)
+	icell(1) = poisson_solver(1)%partition(rank)%icell(1)
+	icell(2) = poisson_solver(1)%partition(rank)%icell(2)
 
-	xmin(1)  = domain_xmin(1) + dx(1) * REAL(poisson_solver%partition(rank)%icell(1),MK)
-	xmin(2)  = domain_xmin(2) + dx(2) * REAL(poisson_solver%partition(rank)%icell(2),MK)
+	xmin(1)  = domain_xmin(1) + dx(1) * REAL(poisson_solver(1)%partition(rank)%icell(1),MK)
+	xmin(2)  = domain_xmin(2) + dx(2) * REAL(poisson_solver(1)%partition(rank)%icell(2),MK)
 
 !------------------------------------------------------------------------------!
 ! Allocate fields
@@ -139,7 +140,7 @@ include 'mpif.h'
 	CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 #endif
 
-	CALL poisson_solver_push(Bx,By,Bz)
+	CALL poisson_solver_push(1,Bx,By,Bz)
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Solve
@@ -152,7 +153,7 @@ include 'mpif.h'
 	CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 #endif
 
-	CALL poisson_solver_solve2d()
+	CALL poisson_solver_solve2d( 1 )
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Map back to ClientArray
@@ -165,7 +166,7 @@ include 'mpif.h'
 	CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 #endif
 
-	CALL poisson_solver_pull(Bx,By,Bz,Ax,Ay,Az)
+	CALL poisson_solver_pull(1,Ax,Ay,Az,Bx,By,Bz)
 
 !------------------------------------------------------------------------------!
 ! Calculate error integral
@@ -272,7 +273,10 @@ include 'mpif.h'
 		CALL MPI_BARRIER(MPI_COMM_WORLD,ierr)
 	END DO
 
-
+!------------------------------------------------------------------------------!
+! Finalise poisson solver
+!------------------------------------------------------------------------------!
+	CALL poisson_solver_finalise( 1 )
 
 !------------------------------------------------------------------------------!
 ! Finalise MPI

@@ -5,7 +5,7 @@
 !  Description:  Pulls the field arrays from the poisson solver object
 !  
 !------------------------------------------------------------------------------!
-SUBROUTINE poisson_solver_pull_1pointer3d( real_rhs, real_lhs, offset )
+SUBROUTINE poisson_solver_pull_1pointer3d(ps,offset,real_lhs,real_rhs)
 
 IMPLICIT NONE
 
@@ -13,9 +13,10 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Arguments
 !------------------------------------------------------------------------------!
-	REAL(MK),DIMENSION(:,:,:,:),POINTER, INTENT(INOUT) :: real_rhs
-	REAL(MK),DIMENSION(:,:,:,:),POINTER, INTENT(INOUT) :: real_lhs
-	INTEGER,DIMENSION(3),INTENT(IN)                    :: offset
+	INTEGER,  INTENT(IN)                                       :: ps
+	INTEGER,DIMENSION(3),INTENT(IN)                            :: offset
+	REAL(MK),DIMENSION(:,:,:,:),POINTER,INTENT(INOUT)          :: real_lhs
+	REAL(MK),DIMENSION(:,:,:,:),POINTER,INTENT(INOUT),OPTIONAL :: real_rhs
 
 !------------------------------------------------------------------------------!
 ! Local variables
@@ -48,13 +49,15 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Check that the pointers are associated
 !------------------------------------------------------------------------------!
-	IF ( .NOT.ASSOCIATED(real_rhs) ) THEN
+	IF ( .NOT.ASSOCIATED(real_lhs) ) THEN
 		WRITE(*,'(A)')"[poisson_solver_pull]: Error pointer 1 not associated."
 		GO TO 9999
 	END IF
-	IF ( .NOT.ASSOCIATED(real_lhs) ) THEN
-		WRITE(*,'(A)')"[poisson_solver_pull]: Error pointer 2 not associated."
-		GO TO 9999
+	IF(PRESENT(real_rhs))THEN
+		IF ( .NOT.ASSOCIATED(real_rhs) ) THEN
+			WRITE(*,'(A)')"[poisson_solver_pull]: Error pointer 2 not associated."
+			GO TO 9999
+		END IF
 	END IF
 
 !------------------------------------------------------------------------------!
@@ -68,61 +71,64 @@ include 'mpif.h'
 	lZ = .FALSE.
 
 	nmap = 0
-	IF ( SIZE(real_rhs,1) .GE. 1 .AND. ALLOCATED(poisson_solver%rhsX) ) THEN
-		rX = .TRUE.
-		nmap = nmap + 1
-	END IF
-	IF ( SIZE(real_rhs,1) .GE. 2 .AND. ALLOCATED(poisson_solver%rhsY) ) THEN
-		rY = .TRUE.
-		nmap = nmap + 1
-	END IF
-	IF ( SIZE(real_rhs,1) .GE. 3 .AND. ALLOCATED(poisson_solver%rhsZ) ) THEN
-		rZ = .TRUE.
-		nmap = nmap + 1
-	END IF
 
-	IF ( SIZE(real_lhs,1) .GE. 1 .AND. ALLOCATED(poisson_solver%lhsX) ) THEN
+	IF ( SIZE(real_lhs,1) .GE. 1 .AND. ALLOCATED(poisson_solver(ps)%lhsX) ) THEN
 		lX = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF ( SIZE(real_lhs,1) .GE. 2 .AND. ALLOCATED(poisson_solver%lhsY) ) THEN
+	IF ( SIZE(real_lhs,1) .GE. 2 .AND. ALLOCATED(poisson_solver(ps)%lhsY) ) THEN
 		lY = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF ( SIZE(real_lhs,1) .GE. 3 .AND. ALLOCATED(poisson_solver%lhsZ) ) THEN
+	IF ( SIZE(real_lhs,1) .GE. 3 .AND. ALLOCATED(poisson_solver(ps)%lhsZ) ) THEN
 		lZ = .TRUE.
 		nmap = nmap + 1
+	END IF
+
+	IF(PRESENT(real_rhs))THEN
+		IF ( SIZE(real_rhs,1) .GE. 1 .AND. ALLOCATED(poisson_solver(ps)%rhsX) ) THEN
+			rX = .TRUE.
+			nmap = nmap + 1
+		END IF
+		IF ( SIZE(real_rhs,1) .GE. 2 .AND. ALLOCATED(poisson_solver(ps)%rhsY) ) THEN
+			rY = .TRUE.
+			nmap = nmap + 1
+		END IF
+		IF ( SIZE(real_rhs,1) .GE. 3 .AND. ALLOCATED(poisson_solver(ps)%rhsZ) ) THEN
+			rZ = .TRUE.
+			nmap = nmap + 1
+		END IF
 	END IF
 
 !------------------------------------------------------------------------------!
 ! Allocate and pack communication buffers
 !------------------------------------------------------------------------------!
-	ALLOCATE( buffer_recv(poisson_solver%xpen2real%ncomm) )
+	ALLOCATE( buffer_recv(poisson_solver(ps)%xpen2real%ncomm) )
 
-	DO  i = 1,poisson_solver%xpen2real%ncomm
+	DO i = 1,poisson_solver(ps)%xpen2real%ncomm
 
 !------------------------------------------------------------------------------!
 ! Self-communication
 !------------------------------------------------------------------------------!
-		IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 0 ) THEN
+		IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 0 ) THEN
 
-			imin(1) = poisson_solver%xpen2real%info(i)%i2j_min_send(1)
-			imin(2) = poisson_solver%xpen2real%info(i)%i2j_min_send(2)
-			imin(3) = poisson_solver%xpen2real%info(i)%i2j_min_send(3)
+			imin(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(1)
+			imin(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(2)
+			imin(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(3)
 
-			imax(1) = poisson_solver%xpen2real%info(i)%i2j_max_send(1)
-			imax(2) = poisson_solver%xpen2real%info(i)%i2j_max_send(2)
-			imax(3) = poisson_solver%xpen2real%info(i)%i2j_max_send(3)
+			imax(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(1)
+			imax(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(2)
+			imax(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(3)
 
-			nx = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(1)
-			ny = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(2)
+			nx = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(1)
+			ny = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(2)
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Fill receive buffer directly
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
-			nsend = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-			             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-			             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+			nsend = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+			             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+			             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 
 			ALLOCATE( buffer_recv(i)%val(0:nsend-1) )
 			buffer_recv(i)%val = 0.0_MK
@@ -136,28 +142,28 @@ include 'mpif.h'
 						pqs = sqn + p
 
 						IF ( rX ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsX(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsX(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( rY ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsY(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsY(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( rZ ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsZ(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsZ(pqs),MK)
 							k = k + 1
 						END IF
 
 						IF ( lX ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsX(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsX(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( lY ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsY(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsY(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( lZ ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsZ(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsZ(pqs),MK)
 							k = k + 1
 						END IF
 
@@ -170,48 +176,48 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 		ELSE
 
-			iproc = poisson_solver%xpen2real%info(i)%iproc
-			jproc = poisson_solver%xpen2real%info(i)%jproc
+			iproc = poisson_solver(ps)%xpen2real%info(i)%iproc
+			jproc = poisson_solver(ps)%xpen2real%info(i)%jproc
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Mesh info
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 			pack = .TRUE.
 			IF ( rank .EQ. iproc .AND. &
-			     poisson_solver%xpen2real%info(i)%nway .NE. 2 ) THEN
+			     poisson_solver(ps)%xpen2real%info(i)%nway .NE. 2 ) THEN
 
-				imin(1) = poisson_solver%xpen2real%info(i)%i2j_min_send(1)
-				imin(2) = poisson_solver%xpen2real%info(i)%i2j_min_send(2)
-				imin(3) = poisson_solver%xpen2real%info(i)%i2j_min_send(3)
+				imin(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(1)
+				imin(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(2)
+				imin(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(3)
 
-				imax(1) = poisson_solver%xpen2real%info(i)%i2j_max_send(1)
-				imax(2) = poisson_solver%xpen2real%info(i)%i2j_max_send(2)
-				imax(3) = poisson_solver%xpen2real%info(i)%i2j_max_send(3)
+				imax(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(1)
+				imax(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(2)
+				imax(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(3)
 
-				nsend = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-				             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-				             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+				nsend = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+				             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+				             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 
-				nx = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(1)
-				ny = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(2)
+				nx = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(1)
+				ny = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(2)
 
 			ELSE IF ( rank .EQ. jproc .AND. &
-			          poisson_solver%xpen2real%info(i)%nway .GT. 1 ) THEN
+			          poisson_solver(ps)%xpen2real%info(i)%nway .GT. 1 ) THEN
 
-				imin(1) = poisson_solver%xpen2real%info(i)%j2i_min_send(1)
-				imin(2) = poisson_solver%xpen2real%info(i)%j2i_min_send(2)
-				imin(3) = poisson_solver%xpen2real%info(i)%j2i_min_send(3)
+				imin(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_send(1)
+				imin(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_send(2)
+				imin(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_send(3)
 
-				imax(1) = poisson_solver%xpen2real%info(i)%j2i_max_send(1)
-				imax(2) = poisson_solver%xpen2real%info(i)%j2i_max_send(2)
-				imax(3) = poisson_solver%xpen2real%info(i)%j2i_max_send(3)
+				imax(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_send(1)
+				imax(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_send(2)
+				imax(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_send(3)
 
-				nsend = nmap * poisson_solver%xpen2real%info(i)%j2i_ncell(1) &
-				             * poisson_solver%xpen2real%info(i)%j2i_ncell(2) &
-				             * poisson_solver%xpen2real%info(i)%j2i_ncell(3)
+				nsend = nmap * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(1) &
+				             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(2) &
+				             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(3)
 
-				nx = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_send(1)
-				ny = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_send(2)
+				nx = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_send(1)
+				ny = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_send(2)
 			ELSE
 				pack = .FALSE.
 			END IF
@@ -232,27 +238,27 @@ include 'mpif.h'
 							pqs = sqn + p
 
 							IF ( rX ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsX(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsX(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( rY ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsY(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsY(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( rZ ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsZ(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsZ(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( lX ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsX(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsX(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( lY ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsY(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsY(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( lZ ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsZ(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsZ(pqs),MK)
 								k = k + 1
 							END IF
 
@@ -265,46 +271,46 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Send/Recieve
 !------------------------------------------------------------------------------!
-			IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 1 ) THEN ! only i to j
+			IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 1 ) THEN ! only i to j
 				IF ( rank .EQ. iproc ) THEN ! Sender
 					CALL MPI_SEND( buffer_send%val, nsend, MPI_DOUBLE, jproc, jproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				ELSE IF ( rank .EQ. jproc ) THEN ! Receiver
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_RECV( buffer_recv(i)%val, nrecv, MPI_DOUBLE, iproc, jproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				END IF
-			ELSE IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 2 ) THEN ! only j to i
+			ELSE IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 2 ) THEN ! only j to i
 				IF ( rank .EQ. jproc ) THEN ! Sender
 					CALL MPI_SEND( buffer_send%val, nsend, MPI_DOUBLE, iproc, iproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				ELSE IF ( rank .EQ. iproc ) THEN ! Receiver
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%j2i_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_RECV( buffer_recv(i)%val, nrecv, MPI_DOUBLE, jproc, iproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				END IF
-			ELSE IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 3 ) THEN ! i to j and j to i
+			ELSE IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 3 ) THEN ! i to j and j to i
 				IF ( rank .EQ. iproc ) THEN
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%j2i_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_SENDRECV( buffer_send%val, nsend, MPI_DOUBLE, jproc, iproc, &
 					              buffer_recv(i)%val, nrecv, MPI_DOUBLE, jproc, jproc, &
 					              MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
 				ELSE IF ( rank .EQ. jproc ) THEN
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_SENDRECV( buffer_send%val, nsend, MPI_DOUBLE, iproc, jproc, &
@@ -328,14 +334,14 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Clear arrays
 !------------------------------------------------------------------------------!
-	nrecv = poisson_solver%xpen2real%partition_recv(rank)%ncell(1) &
-	      * poisson_solver%xpen2real%partition_recv(rank)%ncell(2) &
-	      * poisson_solver%xpen2real%partition_recv(rank)%ncell(3)
+	nrecv = poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(1) &
+	      * poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(2) &
+	      * poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(3)
 
 
-	DO k = 0,poisson_solver%xpen2real%partition_recv(rank)%ncell(3)-1
-		DO j = 0,poisson_solver%xpen2real%partition_recv(rank)%ncell(2)-1
-			DO i = 0,poisson_solver%xpen2real%partition_recv(rank)%ncell(1)-1
+	DO k = 0,poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(3)-1
+		DO j = 0,poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(2)-1
+			DO i = 0,poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(1)-1
 
 				IF ( rX ) THEN
 					real_rhs(1,i+offset(1),j+offset(2),k+offset(3)) = 0.0_MK
@@ -364,42 +370,42 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Unpack communication buffer
 !------------------------------------------------------------------------------!
-	DO  i = 1,poisson_solver%xpen2real%ncomm
+	DO  i = 1,poisson_solver(ps)%xpen2real%ncomm
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Mesh info
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 		pack = .TRUE.
-		iproc = poisson_solver%xpen2real%info(i)%iproc
-		jproc = poisson_solver%xpen2real%info(i)%jproc
+		iproc = poisson_solver(ps)%xpen2real%info(i)%iproc
+		jproc = poisson_solver(ps)%xpen2real%info(i)%jproc
 
 		IF ( rank .EQ. jproc .AND. &
-		     poisson_solver%xpen2real%info(i)%nway .NE. 2 ) THEN
+		     poisson_solver(ps)%xpen2real%info(i)%nway .NE. 2 ) THEN
 
-			imin(1) = poisson_solver%xpen2real%info(i)%i2j_min_recv(1)
-			imin(2) = poisson_solver%xpen2real%info(i)%i2j_min_recv(2)
-			imin(3) = poisson_solver%xpen2real%info(i)%i2j_min_recv(3)
+			imin(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_recv(1)
+			imin(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_recv(2)
+			imin(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_recv(3)
 
-			imax(1) = poisson_solver%xpen2real%info(i)%i2j_max_recv(1)
-			imax(2) = poisson_solver%xpen2real%info(i)%i2j_max_recv(2)
-			imax(3) = poisson_solver%xpen2real%info(i)%i2j_max_recv(3)
+			imax(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_recv(1)
+			imax(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_recv(2)
+			imax(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_recv(3)
 
-			nx = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_recv(1)
-			ny = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_recv(2)
+			nx = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_recv(1)
+			ny = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_recv(2)
 
 		ELSE IF ( rank .EQ. iproc .AND. &
-		          poisson_solver%xpen2real%info(i)%nway .GT. 1 ) THEN
+		          poisson_solver(ps)%xpen2real%info(i)%nway .GT. 1 ) THEN
 
-			imin(1) = poisson_solver%xpen2real%info(i)%j2i_min_recv(1)
-			imin(2) = poisson_solver%xpen2real%info(i)%j2i_min_recv(2)
-			imin(3) = poisson_solver%xpen2real%info(i)%j2i_min_recv(3)
+			imin(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_recv(1)
+			imin(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_recv(2)
+			imin(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_recv(3)
 
-			imax(1) = poisson_solver%xpen2real%info(i)%j2i_max_recv(1)
-			imax(2) = poisson_solver%xpen2real%info(i)%j2i_max_recv(2)
-			imax(3) = poisson_solver%xpen2real%info(i)%j2i_max_recv(3)
+			imax(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_recv(1)
+			imax(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_recv(2)
+			imax(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_recv(3)
 
-			nx = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_recv(1)
-			ny = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_recv(2)
+			nx = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_recv(1)
+			ny = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_recv(2)
 
 		ELSE
 			pack = .FALSE.
@@ -463,7 +469,7 @@ include 'mpif.h'
 ! De-allocate recieve buffers
 !------------------------------------------------------------------------------!
 	IF ( ASSOCIATED(buffer_recv) ) THEN
-		DO i = 1,poisson_solver%xpen2real%ncomm
+		DO i = 1,poisson_solver(ps)%xpen2real%ncomm
 			IF( ASSOCIATED( buffer_recv(i)%val ) ) THEN
 				DEALLOCATE( buffer_recv(i)%val )
 			END IF
@@ -486,8 +492,8 @@ END SUBROUTINE poisson_solver_pull_1pointer3d
 
 
 
-SUBROUTINE poisson_solver_pull_3array( real_rhsX, real_rhsY, real_rhsZ, &
-                                       real_lhsX, real_lhsY, real_lhsZ )
+SUBROUTINE poisson_solver_pull_3array( ps, real_lhsX, real_lhsY, real_lhsZ, &
+                                           real_rhsX, real_rhsY, real_rhsZ )
 
 IMPLICIT NONE
 
@@ -496,13 +502,15 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Arguments
 !------------------------------------------------------------------------------!
-	REAL(MK),DIMENSION(:),ALLOCATABLE, INTENT(INOUT) :: real_rhsX
-	REAL(MK),DIMENSION(:),ALLOCATABLE, INTENT(INOUT) :: real_rhsY
-	REAL(MK),DIMENSION(:),ALLOCATABLE, INTENT(INOUT) :: real_rhsZ
+	INTEGER,  INTENT(IN) :: ps
 
-	REAL(MK),DIMENSION(:),ALLOCATABLE, INTENT(INOUT) :: real_lhsX
-	REAL(MK),DIMENSION(:),ALLOCATABLE, INTENT(INOUT) :: real_lhsY
-	REAL(MK),DIMENSION(:),ALLOCATABLE, INTENT(INOUT) :: real_lhsZ
+	REAL(MK),DIMENSION(:),ALLOCATABLE,INTENT(INOUT) :: real_lhsX
+	REAL(MK),DIMENSION(:),ALLOCATABLE,INTENT(INOUT) :: real_lhsY
+	REAL(MK),DIMENSION(:),ALLOCATABLE,INTENT(INOUT) :: real_lhsZ
+
+	REAL(MK),DIMENSION(:),ALLOCATABLE,INTENT(INOUT),OPTIONAL :: real_rhsX
+	REAL(MK),DIMENSION(:),ALLOCATABLE,INTENT(INOUT),OPTIONAL :: real_rhsY
+	REAL(MK),DIMENSION(:),ALLOCATABLE,INTENT(INOUT),OPTIONAL :: real_rhsZ
 
 !------------------------------------------------------------------------------!
 ! Local variables
@@ -542,61 +550,67 @@ include 'mpif.h'
 	lZ = .FALSE.
 
 	nmap = 0
-	IF ( ALLOCATED(real_rhsX) .AND. ALLOCATED(poisson_solver%rhsX) ) THEN
-		rX = .TRUE.
-		nmap = nmap + 1
-	END IF
-	IF ( ALLOCATED(real_rhsY) .AND. ALLOCATED(poisson_solver%rhsY) ) THEN
-		rY = .TRUE.
-		nmap = nmap + 1
-	END IF
-	IF ( ALLOCATED(real_rhsZ) .AND. ALLOCATED(poisson_solver%rhsZ) ) THEN
-		rZ = .TRUE.
-		nmap = nmap + 1
-	END IF
-
-	IF ( ALLOCATED(real_lhsX) .AND. ALLOCATED(poisson_solver%lhsX) ) THEN
+	IF ( ALLOCATED(real_lhsX) .AND. ALLOCATED(poisson_solver(ps)%lhsX) ) THEN
 		lX = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF ( ALLOCATED(real_lhsY) .AND. ALLOCATED(poisson_solver%lhsY) ) THEN
+	IF ( ALLOCATED(real_lhsY) .AND. ALLOCATED(poisson_solver(ps)%lhsY) ) THEN
 		lY = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF ( ALLOCATED(real_lhsZ) .AND. ALLOCATED(poisson_solver%lhsZ) ) THEN
+	IF ( ALLOCATED(real_lhsZ) .AND. ALLOCATED(poisson_solver(ps)%lhsZ) ) THEN
 		lZ = .TRUE.
 		nmap = nmap + 1
+	END IF
+
+	IF( PRESENT(real_rhsX) )THEN
+		IF ( ALLOCATED(real_rhsX) .AND. ALLOCATED(poisson_solver(ps)%rhsX) ) THEN
+			rX = .TRUE.
+			nmap = nmap + 1
+		END IF
+	END IF
+	IF( PRESENT(real_rhsY) )THEN
+		IF ( ALLOCATED(real_rhsY) .AND. ALLOCATED(poisson_solver(ps)%rhsY) ) THEN
+			rY = .TRUE.
+			nmap = nmap + 1
+		END IF
+	END IF
+	IF( PRESENT(real_rhsZ) )THEN
+		IF ( ALLOCATED(real_rhsZ) .AND. ALLOCATED(poisson_solver(ps)%rhsZ) ) THEN
+			rZ = .TRUE.
+			nmap = nmap + 1
+		END IF
 	END IF
 
 !------------------------------------------------------------------------------!
 ! Allocate and pack communication buffers
 !------------------------------------------------------------------------------!
-	ALLOCATE( buffer_recv(poisson_solver%xpen2real%ncomm) )
+	ALLOCATE( buffer_recv(poisson_solver(ps)%xpen2real%ncomm) )
 
-	DO  i = 1,poisson_solver%xpen2real%ncomm
+	DO  i = 1,poisson_solver(ps)%xpen2real%ncomm
 
 !------------------------------------------------------------------------------!
 ! Self-communication
 !------------------------------------------------------------------------------!
-		IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 0 ) THEN
+		IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 0 ) THEN
 
-			imin(1) = poisson_solver%xpen2real%info(i)%i2j_min_send(1)
-			imin(2) = poisson_solver%xpen2real%info(i)%i2j_min_send(2)
-			imin(3) = poisson_solver%xpen2real%info(i)%i2j_min_send(3)
+			imin(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(1)
+			imin(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(2)
+			imin(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(3)
 
-			imax(1) = poisson_solver%xpen2real%info(i)%i2j_max_send(1)
-			imax(2) = poisson_solver%xpen2real%info(i)%i2j_max_send(2)
-			imax(3) = poisson_solver%xpen2real%info(i)%i2j_max_send(3)
+			imax(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(1)
+			imax(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(2)
+			imax(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(3)
 
-			nx = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(1)
-			ny = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(2)
+			nx = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(1)
+			ny = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(2)
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Fill receive buffer directly
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
-			nsend = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-			             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-			             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+			nsend = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+			             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+			             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 
 			ALLOCATE( buffer_recv(i)%val(0:nsend-1) )
 			buffer_recv(i)%val = 0.0_MK
@@ -610,28 +624,28 @@ include 'mpif.h'
 						pqs = sqn + p
 
 						IF ( rX ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsX(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsX(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( rY ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsY(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsY(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( rZ ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsZ(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsZ(pqs),MK)
 							k = k + 1
 						END IF
 
 						IF ( lX ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsX(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsX(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( lY ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsY(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsY(pqs),MK)
 							k = k + 1
 						END IF
 						IF ( lZ ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsZ(pqs),MK)
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsZ(pqs),MK)
 							k = k + 1
 						END IF
 
@@ -644,48 +658,48 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 		ELSE
 
-			iproc = poisson_solver%xpen2real%info(i)%iproc
-			jproc = poisson_solver%xpen2real%info(i)%jproc
+			iproc = poisson_solver(ps)%xpen2real%info(i)%iproc
+			jproc = poisson_solver(ps)%xpen2real%info(i)%jproc
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Mesh info
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 			pack = .TRUE.
 			IF ( rank .EQ. iproc .AND. &
-			     poisson_solver%xpen2real%info(i)%nway .NE. 2 ) THEN
+			     poisson_solver(ps)%xpen2real%info(i)%nway .NE. 2 ) THEN
 
-				imin(1) = poisson_solver%xpen2real%info(i)%i2j_min_send(1)
-				imin(2) = poisson_solver%xpen2real%info(i)%i2j_min_send(2)
-				imin(3) = poisson_solver%xpen2real%info(i)%i2j_min_send(3)
+				imin(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(1)
+				imin(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(2)
+				imin(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_send(3)
 
-				imax(1) = poisson_solver%xpen2real%info(i)%i2j_max_send(1)
-				imax(2) = poisson_solver%xpen2real%info(i)%i2j_max_send(2)
-				imax(3) = poisson_solver%xpen2real%info(i)%i2j_max_send(3)
+				imax(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(1)
+				imax(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(2)
+				imax(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_send(3)
 
-				nsend = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-				             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-				             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+				nsend = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+				             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+				             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 
-				nx = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(1)
-				ny = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_send(2)
+				nx = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(1)
+				ny = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_send(2)
 
 			ELSE IF ( rank .EQ. jproc .AND. &
-			          poisson_solver%xpen2real%info(i)%nway .GT. 1 ) THEN
+			          poisson_solver(ps)%xpen2real%info(i)%nway .GT. 1 ) THEN
 
-				imin(1) = poisson_solver%xpen2real%info(i)%j2i_min_send(1)
-				imin(2) = poisson_solver%xpen2real%info(i)%j2i_min_send(2)
-				imin(3) = poisson_solver%xpen2real%info(i)%j2i_min_send(3)
+				imin(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_send(1)
+				imin(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_send(2)
+				imin(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_send(3)
 
-				imax(1) = poisson_solver%xpen2real%info(i)%j2i_max_send(1)
-				imax(2) = poisson_solver%xpen2real%info(i)%j2i_max_send(2)
-				imax(3) = poisson_solver%xpen2real%info(i)%j2i_max_send(3)
+				imax(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_send(1)
+				imax(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_send(2)
+				imax(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_send(3)
 
-				nsend = nmap * poisson_solver%xpen2real%info(i)%j2i_ncell(1) &
-				             * poisson_solver%xpen2real%info(i)%j2i_ncell(2) &
-				             * poisson_solver%xpen2real%info(i)%j2i_ncell(3)
+				nsend = nmap * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(1) &
+				             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(2) &
+				             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(3)
 
-				nx = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_send(1)
-				ny = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_send(2)
+				nx = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_send(1)
+				ny = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_send(2)
 			ELSE
 				pack = .FALSE.
 			END IF
@@ -706,27 +720,27 @@ include 'mpif.h'
 							pqs = sqn + p
 
 							IF ( rX ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsX(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsX(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( rY ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsY(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsY(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( rZ ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsZ(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsZ(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( lX ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsX(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsX(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( lY ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsY(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsY(pqs),MK)
 								k = k + 1
 							END IF
 							IF ( lZ ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsZ(pqs),MK)
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsZ(pqs),MK)
 								k = k + 1
 							END IF
 
@@ -739,46 +753,46 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Send/Recieve
 !------------------------------------------------------------------------------!
-			IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 1 ) THEN ! only i to j
+			IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 1 ) THEN ! only i to j
 				IF ( rank .EQ. iproc ) THEN ! Sender
 					CALL MPI_SEND( buffer_send%val, nsend, MPI_DOUBLE, jproc, jproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				ELSE IF ( rank .EQ. jproc ) THEN ! Receiver
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_RECV( buffer_recv(i)%val, nrecv, MPI_DOUBLE, iproc, jproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				END IF
-			ELSE IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 2 ) THEN ! only j to i
+			ELSE IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 2 ) THEN ! only j to i
 				IF ( rank .EQ. jproc ) THEN ! Sender
 					CALL MPI_SEND( buffer_send%val, nsend, MPI_DOUBLE, iproc, iproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				ELSE IF ( rank .EQ. iproc ) THEN ! Receiver
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%j2i_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_RECV( buffer_recv(i)%val, nrecv, MPI_DOUBLE, jproc, iproc, &
 					          MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr )
 				END IF
-			ELSE IF ( poisson_solver%xpen2real%info(i)%nway .EQ. 3 ) THEN ! i to j and j to i
+			ELSE IF ( poisson_solver(ps)%xpen2real%info(i)%nway .EQ. 3 ) THEN ! i to j and j to i
 				IF ( rank .EQ. iproc ) THEN
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%j2i_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%j2i_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%j2i_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_SENDRECV( buffer_send%val, nsend, MPI_DOUBLE, jproc, iproc, &
 					              buffer_recv(i)%val, nrecv, MPI_DOUBLE, jproc, jproc, &
 					              MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
 				ELSE IF ( rank .EQ. jproc ) THEN
-					nrecv = nmap * poisson_solver%xpen2real%info(i)%i2j_ncell(1) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(2) &
-					             * poisson_solver%xpen2real%info(i)%i2j_ncell(3)
+					nrecv = nmap * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(1) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(2) &
+					             * poisson_solver(ps)%xpen2real%info(i)%i2j_ncell(3)
 					ALLOCATE( buffer_recv(i)%val( 0:nrecv-1 ) )
 					buffer_recv(i)%val = 0.0_MK
 					CALL MPI_SENDRECV( buffer_send%val, nsend, MPI_DOUBLE, iproc, jproc, &
@@ -802,9 +816,9 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Clear arrays
 !------------------------------------------------------------------------------!
-	nrecv = poisson_solver%xpen2real%partition_recv(rank)%ncell(1) &
-	      * poisson_solver%xpen2real%partition_recv(rank)%ncell(2) &
-	      * poisson_solver%xpen2real%partition_recv(rank)%ncell(3)
+	nrecv = poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(1) &
+	      * poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(2) &
+	      * poisson_solver(ps)%xpen2real%partition_recv(rank)%ncell(3)
 
 	DO i = 0,nrecv-1
 		IF ( rX ) THEN
@@ -831,42 +845,42 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Unpack communication buffer
 !------------------------------------------------------------------------------!
-	DO  i = 1,poisson_solver%xpen2real%ncomm
+	DO  i = 1,poisson_solver(ps)%xpen2real%ncomm
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 ! Mesh info
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 		pack = .TRUE.
-		iproc = poisson_solver%xpen2real%info(i)%iproc
-		jproc = poisson_solver%xpen2real%info(i)%jproc
+		iproc = poisson_solver(ps)%xpen2real%info(i)%iproc
+		jproc = poisson_solver(ps)%xpen2real%info(i)%jproc
 
 		IF ( rank .EQ. jproc .AND. &
-		     poisson_solver%xpen2real%info(i)%nway .NE. 2 ) THEN
+		     poisson_solver(ps)%xpen2real%info(i)%nway .NE. 2 ) THEN
 
-			imin(1) = poisson_solver%xpen2real%info(i)%i2j_min_recv(1)
-			imin(2) = poisson_solver%xpen2real%info(i)%i2j_min_recv(2)
-			imin(3) = poisson_solver%xpen2real%info(i)%i2j_min_recv(3)
+			imin(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_recv(1)
+			imin(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_recv(2)
+			imin(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_min_recv(3)
 
-			imax(1) = poisson_solver%xpen2real%info(i)%i2j_max_recv(1)
-			imax(2) = poisson_solver%xpen2real%info(i)%i2j_max_recv(2)
-			imax(3) = poisson_solver%xpen2real%info(i)%i2j_max_recv(3)
+			imax(1) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_recv(1)
+			imax(2) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_recv(2)
+			imax(3) = poisson_solver(ps)%xpen2real%info(i)%i2j_max_recv(3)
 
-			nx = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_recv(1)
-			ny = poisson_solver%xpen2real%info(i)%i2j_ncell_partition_recv(2)
+			nx = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_recv(1)
+			ny = poisson_solver(ps)%xpen2real%info(i)%i2j_ncell_partition_recv(2)
 
 		ELSE IF ( rank .EQ. iproc .AND. &
-		          poisson_solver%xpen2real%info(i)%nway .GT. 1 ) THEN
+		          poisson_solver(ps)%xpen2real%info(i)%nway .GT. 1 ) THEN
 
-			imin(1) = poisson_solver%xpen2real%info(i)%j2i_min_recv(1)
-			imin(2) = poisson_solver%xpen2real%info(i)%j2i_min_recv(2)
-			imin(3) = poisson_solver%xpen2real%info(i)%j2i_min_recv(3)
+			imin(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_recv(1)
+			imin(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_recv(2)
+			imin(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_min_recv(3)
 
-			imax(1) = poisson_solver%xpen2real%info(i)%j2i_max_recv(1)
-			imax(2) = poisson_solver%xpen2real%info(i)%j2i_max_recv(2)
-			imax(3) = poisson_solver%xpen2real%info(i)%j2i_max_recv(3)
+			imax(1) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_recv(1)
+			imax(2) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_recv(2)
+			imax(3) = poisson_solver(ps)%xpen2real%info(i)%j2i_max_recv(3)
 
-			nx = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_recv(1)
-			ny = poisson_solver%xpen2real%info(i)%j2i_ncell_partition_recv(2)
+			nx = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_recv(1)
+			ny = poisson_solver(ps)%xpen2real%info(i)%j2i_ncell_partition_recv(2)
 
 		ELSE
 			pack = .FALSE.
@@ -924,7 +938,7 @@ include 'mpif.h'
 ! De-allocate recieve buffers
 !------------------------------------------------------------------------------!
 	IF ( ASSOCIATED(buffer_recv) ) THEN
-		DO i = 1,poisson_solver%xpen2real%ncomm
+		DO i = 1,poisson_solver(ps)%xpen2real%ncomm
 			IF( ASSOCIATED( buffer_recv(i)%val ) ) THEN
 				DEALLOCATE( buffer_recv(i)%val )
 			END IF

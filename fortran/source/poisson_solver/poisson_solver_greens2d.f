@@ -5,7 +5,7 @@
 !  Description:  Calculates the 2D Greens function and other convolution kernels
 !  
 !------------------------------------------------------------------------------!
-SUBROUTINE poisson_solver_greens2d(dom_ncell,dom_bc,dom_dx,reg_order)
+SUBROUTINE poisson_solver_greens2d(ps,dom_ncell,dom_bc,dom_dx,reg_order)
 
 USE poisson_solver_partition
 USE poisson_solver_communication
@@ -18,6 +18,7 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Arguments
 !------------------------------------------------------------------------------!
+	INTEGER,  INTENT(IN) :: ps
 	INTEGER,  DIMENSION(3), INTENT(IN):: dom_ncell
 	INTEGER,  DIMENSION(3), INTENT(IN):: dom_bc
 	REAL(MK), DIMENSION(3), INTENT(IN):: dom_dx
@@ -90,33 +91,33 @@ include 'mpif.h'
 
 	nfft = xpen_ext(rank)%ncell(1)
 
-	IF( .NOT.ALLOCATED(poisson_solver%ikX) )THEN
+	IF( .NOT.ALLOCATED(poisson_solver(ps)%ikX) )THEN
 		dk = 1.0_MK/( REAL( nfft ,MK) * dx(1) )
-		ALLOCATE( poisson_solver%ikX( 0:ncell(1)-1 ) )
-		poisson_solver%ikX = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%ikX( 0:ncell(1)-1 ) )
+		poisson_solver(ps)%ikX = CMPLX(0.0_MK,0.0_MK,MKC)
 
 		DO i = 0,ncell(1)-1
 			IF ( 2*(icell(1)+i) .LT. nfft ) THEN
-				poisson_solver%ikX(i) = CMPLX( 0.0_MK, &
+				poisson_solver(ps)%ikX(i) = CMPLX( 0.0_MK, &
 					                      2.0_MK * pi * REAL(icell(1)+i,MK) * dk ,MKC)
 			ELSE
-				poisson_solver%ikX(i) = CMPLX( 0.0_MK, &
+				poisson_solver(ps)%ikX(i) = CMPLX( 0.0_MK, &
 					                      2.0_MK * pi * REAL(icell(1)+i-nfft,MK) * dk ,MKC)
 			END IF
 		END DO
 	END IF
 
-	IF( .NOT.ALLOCATED(poisson_solver%ikY) )THEN
+	IF( .NOT.ALLOCATED(poisson_solver(ps)%ikY) )THEN
 		dk = 1.0_MK/( REAL(ncell(2),MK) * dx(2) )
-		ALLOCATE( poisson_solver%ikY( 0:ncell(2)-1 ) )
-		poisson_solver%ikY = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%ikY( 0:ncell(2)-1 ) )
+		poisson_solver(ps)%ikY = CMPLX(0.0_MK,0.0_MK,MKC)
 
 		DO j = 0,ncell(2)-1
 			IF ( 2*j .LT. ncell(2) ) THEN
-				poisson_solver%ikY(j) = CMPLX( 0.0_MK, &
+				poisson_solver(ps)%ikY(j) = CMPLX( 0.0_MK, &
 					                      2.0_MK * pi * REAL(j,MK) * dk ,MKC)
 			ELSE
-				poisson_solver%ikY(j) = CMPLX( 0.0_MK, &
+				poisson_solver(ps)%ikY(j) = CMPLX( 0.0_MK, &
 					                      2.0_MK * pi * REAL(j-ncell(2),MK) * dk ,MKC)
 			END IF
 		END DO
@@ -125,7 +126,7 @@ include 'mpif.h'
 !==============================================================================!
 ! Create regularisation kernel
 !==============================================================================!
-	IF( .NOT.ALLOCATED(poisson_solver%zeta) )THEN
+	IF( .NOT.ALLOCATED(poisson_solver(ps)%zeta) )THEN
 		sigma = 2.0_MK*h
 		IF ( MOD(reg_order, 2) .NE. 0 ) THEN
 			mreg = reg_order + 1
@@ -135,7 +136,7 @@ include 'mpif.h'
 
 		IF ( mreg .GT. 0 ) THEN
 
-			ALLOCATE( poisson_solver%zeta( 0:ncell(1)*ncell(2)-1 ) )
+			ALLOCATE( poisson_solver(ps)%zeta( 0:ncell(1)*ncell(2)-1 ) )
 			ALLOCATE( c(mreg/2) )
 
 			c(1) = 1.0_MK
@@ -147,13 +148,13 @@ include 'mpif.h'
 				jn = j * ncell(1)
 				DO i = 0,ncell(1)-1
 					ij = jn + i
-					arg = 0.5_MK * sigma**2 * ( AIMAG(poisson_solver%ikX(i))**2 &
-						                        + AIMAG(poisson_solver%ikY(j))**2 )
+					arg = 0.5_MK * sigma**2 * ( AIMAG(poisson_solver(ps)%ikX(i))**2 &
+						                        + AIMAG(poisson_solver(ps)%ikY(j))**2 )
 					sum = 0.0_MK
 					DO n = 1,mreg/2
 						sum = sum + c(n) * arg**(n-1)
 					END DO
-					poisson_solver%zeta(ij) = sum * EXP( -arg )
+					poisson_solver(ps)%zeta(ij) = sum * EXP( -arg )
 				END DO
 			END DO
 			DEALLOCATE(c)
@@ -187,8 +188,8 @@ include 'mpif.h'
 
 		CALL pencil_resize( pen, ncell(1) )
 
-		ALLOCATE( poisson_solver%mapG(0:ncell(1)*ncell(2)-1) )
-		poisson_solver%mapG = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%mapG(0:ncell(1)*ncell(2)-1) )
+		poisson_solver(ps)%mapG = CMPLX(0.0_MK,0.0_MK,MKC)
 
 		xmin(1) = - ( 0.5_MK * REAL( xpen_ext(rank)%ncell(1) ,MK) )*dx(1)
 		xmin(2) = - ( 0.5_MK * REAL( ypen_ext(rank)%ncell(2) ,MK) )*dx(2)
@@ -224,7 +225,7 @@ include 'mpif.h'
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 			DO i = 0,ncell(1)-1
 				ij = jn + i
-				poisson_solver%mapG(ij) = pen%X(i)
+				poisson_solver(ps)%mapG(ij) = pen%X(i)
 			END DO
 
 		END DO
@@ -232,7 +233,7 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Map to y-pencils
 !------------------------------------------------------------------------------!
-		CALL poisson_solver_map( comm_ext )
+		CALL poisson_solver_map( ps, comm_ext )
 
 !------------------------------------------------------------------------------!
 ! FFT y-pencils
@@ -240,8 +241,8 @@ include 'mpif.h'
 		ncell(1) = ypen_ext(rank)%ncell(1)
 		ncell(2) = ypen_ext(rank)%ncell(2)
 
-		ALLOCATE( poisson_solver%G2D( 0:ncell(1)*ncell(2)-1 ) )
-		poisson_solver%G2D = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%G2D( 0:ncell(1)*ncell(2)-1 ) )
+		poisson_solver(ps)%G2D = CMPLX(0.0_MK,0.0_MK,MKC)
 
 		CALL pencil_resize( pen, ncell(2) )
 
@@ -252,7 +253,7 @@ include 'mpif.h'
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 			DO j = 0,ncell(2)-1
 				ij = j * ncell(1) + i
-				pen%X(j) = poisson_solver%mapG(ij)
+				pen%X(j) = poisson_solver(ps)%mapG(ij)
 			END DO
 
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
@@ -266,14 +267,14 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 			DO j = 0,ncell(2)-1
 				ij = j * ncell(1) + i
-				poisson_solver%G2D(ij) = pen%X(j)
+				poisson_solver(ps)%G2D(ij) = pen%X(j)
 			END DO
 		END DO
 
 !------------------------------------------------------------------------------!
 ! De-allocate mapG
 !------------------------------------------------------------------------------!
-		DEALLOCATE( poisson_solver%mapG )
+		DEALLOCATE( poisson_solver(ps)%mapG )
 
 != = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = !
 ! Periodic domain
@@ -292,18 +293,18 @@ include 'mpif.h'
 		dx(1)    = ypen_ext(rank)%dx(1)
 		dx(2)    = ypen_ext(rank)%dx(2)
 
-		ALLOCATE( poisson_solver%G2D( 0:ncell(1)*ncell(2)-1 ) )
+		ALLOCATE( poisson_solver(ps)%G2D( 0:ncell(1)*ncell(2)-1 ) )
 
 		DO j = 0,ncell(2)-1
 			jn = j * ncell(1)
 			DO i = 0,ncell(1)-1
 				ij = jn + i
 				IF ( icell(1) .EQ. 0 .AND. i .EQ. 0 .AND. j .EQ. 0 ) THEN
-					poisson_solver%G2D(ij) = CMPLX(0.0_MK,0.0_MK,MKC)
+					poisson_solver(ps)%G2D(ij) = CMPLX(0.0_MK,0.0_MK,MKC)
 				ELSE
-					poisson_solver%G2D(ij) = &
-					          -1.0_MK/( poisson_solver%ikX(i)*poisson_solver%ikX(i) &
-					                  + poisson_solver%ikY(j)*poisson_solver%ikY(j) )
+					poisson_solver(ps)%G2D(ij) = &
+					          -1.0_MK/( poisson_solver(ps)%ikX(i)*poisson_solver(ps)%ikX(i) &
+					                  + poisson_solver(ps)%ikY(j)*poisson_solver(ps)%ikY(j) )
 				END IF
 			END DO
 		END DO
@@ -348,8 +349,8 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Construct Greens function in Fourier space on y-pencil partition
 !------------------------------------------------------------------------------!
-		ALLOCATE( poisson_solver%G2D( 0:ncell(1)*ncell(2)-1 ) )
-		poisson_solver%G2D = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%G2D( 0:ncell(1)*ncell(2)-1 ) )
+		poisson_solver(ps)%G2D = CMPLX(0.0_MK,0.0_MK,MKC)
 
 		DO j = 0,ncell(2)-1
 			jn = j * ncell(1)
@@ -357,11 +358,11 @@ include 'mpif.h'
 				ij = jn + i
 
 				IF ( icell(1) .EQ. 0 .AND. i .EQ. 0 ) THEN
-					poisson_solver%G2D(ij) = pen%X(j)
+					poisson_solver(ps)%G2D(ij) = pen%X(j)
 				ELSE
-					poisson_solver%G2D(ij) = &
-					            -1.0_MK/( poisson_solver%ikX(i)*poisson_solver%ikX(i) &
-					                    + poisson_solver%ikY(j)*poisson_solver%ikY(j) )
+					poisson_solver(ps)%G2D(ij) = &
+					            -1.0_MK/( poisson_solver(ps)%ikX(i)*poisson_solver(ps)%ikX(i) &
+					                    + poisson_solver(ps)%ikY(j)*poisson_solver(ps)%ikY(j) )
 				END IF
 
 			END DO
@@ -407,7 +408,7 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Construct Greens function in Fourier space on y-pencil partition
 !------------------------------------------------------------------------------!
-		ALLOCATE( poisson_solver%G2D( 0:ncell(1)*ncell(2)-1 ) )
+		ALLOCATE( poisson_solver(ps)%G2D( 0:ncell(1)*ncell(2)-1 ) )
 
 		DO j = 0,ncell(2)-1
 			jn = j * ncell(1)
@@ -415,11 +416,11 @@ include 'mpif.h'
 				ij = jn + i
 
 				IF ( j == 0 ) THEN
-					poisson_solver%G2D(ij) = pen%X(icell(1) + i)
+					poisson_solver(ps)%G2D(ij) = pen%X(icell(1) + i)
 				ELSE
-					poisson_solver%G2D(ij) = &
-					           -1.0_MK/( poisson_solver%ikX(i)*poisson_solver%ikX(i) &
-					                   + poisson_solver%ikY(j)*poisson_solver%ikY(j) )
+					poisson_solver(ps)%G2D(ij) = &
+					           -1.0_MK/( poisson_solver(ps)%ikX(i)*poisson_solver(ps)%ikX(i) &
+					                   + poisson_solver(ps)%ikY(j)*poisson_solver(ps)%ikY(j) )
 				END IF
 
 			END DO

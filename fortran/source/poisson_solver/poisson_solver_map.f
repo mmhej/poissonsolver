@@ -5,7 +5,7 @@
 !  Description:  Performs the MPI mapping of the input communication object
 !  
 !------------------------------------------------------------------------------!
-SUBROUTINE poisson_solver_map( comm )
+SUBROUTINE poisson_solver_map(ps,comm)
 
 USE poisson_solver_communication
 
@@ -16,6 +16,7 @@ include 'mpif.h'
 !------------------------------------------------------------------------------!
 ! Arguments
 !------------------------------------------------------------------------------!
+	INTEGER,  INTENT(IN) :: ps
 	TYPE(class_communication), INTENT(IN) :: comm
 
 !------------------------------------------------------------------------------!
@@ -58,31 +59,31 @@ include 'mpif.h'
 	mG = .FALSE.
 
 	nmap = 0
-	IF( ALLOCATED(poisson_solver%rhsX) )THEN
+	IF( ALLOCATED(poisson_solver(ps)%rhsX) )THEN
 		rX = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF( ALLOCATED(poisson_solver%rhsY) )THEN
+	IF( ALLOCATED(poisson_solver(ps)%rhsY) )THEN
 		rY = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF( ALLOCATED(poisson_solver%rhsZ) )THEN
+	IF( ALLOCATED(poisson_solver(ps)%rhsZ) )THEN
 		rZ = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF( ALLOCATED(poisson_solver%lhsX) )THEN
+	IF( ALLOCATED(poisson_solver(ps)%lhsX) )THEN
 		lX = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF( ALLOCATED(poisson_solver%lhsY) )THEN
+	IF( ALLOCATED(poisson_solver(ps)%lhsY) )THEN
 		lY = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF( ALLOCATED(poisson_solver%lhsZ) )THEN
+	IF( ALLOCATED(poisson_solver(ps)%lhsZ) )THEN
 		lZ = .TRUE.
 		nmap = nmap + 1
 	END IF
-	IF( ALLOCATED(poisson_solver%mapG) )THEN
+	IF( ALLOCATED(poisson_solver(ps)%mapG) )THEN
 		mG = .TRUE.
 		nmap = nmap + 1
 	END IF
@@ -132,47 +133,47 @@ include 'mpif.h'
 						pqs = sqn + p
 
 						IF ( rX ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsX(pqs))
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsX(pqs))
 							k = k + 1
-							buffer_recv(i)%val(k) = AIMAG(poisson_solver%rhsX(pqs))
+							buffer_recv(i)%val(k) = AIMAG(poisson_solver(ps)%rhsX(pqs))
 							k = k + 1
 						END IF
 						IF ( rY ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsY(pqs))
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsY(pqs))
 							k = k + 1
-							buffer_recv(i)%val(k) = AIMAG(poisson_solver%rhsY(pqs))
+							buffer_recv(i)%val(k) = AIMAG(poisson_solver(ps)%rhsY(pqs))
 							k = k + 1
 						END IF
 						IF ( rZ ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%rhsZ(pqs))
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%rhsZ(pqs))
 							k = k + 1
-							buffer_recv(i)%val(k) = AIMAG(poisson_solver%rhsZ(pqs))
+							buffer_recv(i)%val(k) = AIMAG(poisson_solver(ps)%rhsZ(pqs))
 							k = k + 1
 						END IF
 
 						IF ( lX ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsX(pqs))
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsX(pqs))
 							k = k + 1
-							buffer_recv(i)%val(k) = AIMAG(poisson_solver%lhsX(pqs))
+							buffer_recv(i)%val(k) = AIMAG(poisson_solver(ps)%lhsX(pqs))
 							k = k + 1
 						END IF
 						IF ( lY ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsY(pqs))
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsY(pqs))
 							k = k + 1
-							buffer_recv(i)%val(k) = AIMAG(poisson_solver%lhsY(pqs))
+							buffer_recv(i)%val(k) = AIMAG(poisson_solver(ps)%lhsY(pqs))
 							k = k + 1
 						END IF
 						IF ( lZ ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%lhsZ(pqs))
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%lhsZ(pqs))
 							k = k + 1
-							buffer_recv(i)%val(k) = AIMAG(poisson_solver%lhsZ(pqs))
+							buffer_recv(i)%val(k) = AIMAG(poisson_solver(ps)%lhsZ(pqs))
 							k = k + 1
 						END IF
 
 						IF ( mG ) THEN
-							buffer_recv(i)%val(k) = REAL(poisson_solver%mapG(pqs))
+							buffer_recv(i)%val(k) = REAL(poisson_solver(ps)%mapG(pqs))
 							k = k + 1
-							buffer_recv(i)%val(k) = AIMAG(poisson_solver%mapG(pqs))
+							buffer_recv(i)%val(k) = AIMAG(poisson_solver(ps)%mapG(pqs))
 							k = k + 1
 						END IF
 
@@ -245,46 +246,46 @@ include 'mpif.h'
 							pqs = sqn + p
 
 							IF ( rX ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsX(pqs))
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsX(pqs))
 								k = k + 1
-								buffer_send%val(k) = AIMAG(poisson_solver%rhsX(pqs))
+								buffer_send%val(k) = AIMAG(poisson_solver(ps)%rhsX(pqs))
 								k = k + 1
 							END IF
 							IF ( rY ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsY(pqs))
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsY(pqs))
 								k = k + 1
-								buffer_send%val(k) = AIMAG(poisson_solver%rhsY(pqs))
+								buffer_send%val(k) = AIMAG(poisson_solver(ps)%rhsY(pqs))
 								k = k + 1
 							END IF
 							IF ( rZ ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%rhsZ(pqs))
+								buffer_send%val(k) = REAL(poisson_solver(ps)%rhsZ(pqs))
 								k = k + 1
-								buffer_send%val(k) = AIMAG(poisson_solver%rhsZ(pqs))
+								buffer_send%val(k) = AIMAG(poisson_solver(ps)%rhsZ(pqs))
 								k = k + 1
 							END IF
 							IF ( lX ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsX(pqs))
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsX(pqs))
 								k = k + 1
-								buffer_send%val(k) = AIMAG(poisson_solver%lhsX(pqs))
+								buffer_send%val(k) = AIMAG(poisson_solver(ps)%lhsX(pqs))
 								k = k + 1
 							END IF
 							IF ( lY ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsY(pqs))
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsY(pqs))
 								k = k + 1
-								buffer_send%val(k) = AIMAG(poisson_solver%lhsY(pqs))
+								buffer_send%val(k) = AIMAG(poisson_solver(ps)%lhsY(pqs))
 								k = k + 1
 							END IF
 							IF ( lZ ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%lhsZ(pqs))
+								buffer_send%val(k) = REAL(poisson_solver(ps)%lhsZ(pqs))
 								k = k + 1
-								buffer_send%val(k) = AIMAG(poisson_solver%lhsZ(pqs))
+								buffer_send%val(k) = AIMAG(poisson_solver(ps)%lhsZ(pqs))
 								k = k + 1
 							END IF
 
 							IF ( mG ) THEN
-								buffer_send%val(k) = REAL(poisson_solver%mapG(pqs))
+								buffer_send%val(k) = REAL(poisson_solver(ps)%mapG(pqs))
 								k = k + 1
-								buffer_send%val(k) = AIMAG(poisson_solver%mapG(pqs))
+								buffer_send%val(k) = AIMAG(poisson_solver(ps)%mapG(pqs))
 								k = k + 1
 							END IF
 
@@ -365,54 +366,54 @@ include 'mpif.h'
 	      * comm%partition_recv(rank)%ncell(3)
 
 	IF ( rX ) THEN
-		IF( ALLOCATED(poisson_solver%rhsX) )THEN
-			DEALLOCATE(poisson_solver%rhsX)
+		IF( ALLOCATED(poisson_solver(ps)%rhsX) )THEN
+			DEALLOCATE(poisson_solver(ps)%rhsX)
 		END IF
-		ALLOCATE( poisson_solver%rhsX(0:nrecv-1) )
-		poisson_solver%rhsX = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%rhsX(0:nrecv-1) )
+		poisson_solver(ps)%rhsX = CMPLX(0.0_MK,0.0_MK,MKC)
 	END IF
 	IF ( rY ) THEN
-		IF( ALLOCATED(poisson_solver%rhsY) )THEN
-			DEALLOCATE(poisson_solver%rhsY)
+		IF( ALLOCATED(poisson_solver(ps)%rhsY) )THEN
+			DEALLOCATE(poisson_solver(ps)%rhsY)
 		END IF
-		ALLOCATE( poisson_solver%rhsY(0:nrecv-1) )
-		poisson_solver%rhsY = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%rhsY(0:nrecv-1) )
+		poisson_solver(ps)%rhsY = CMPLX(0.0_MK,0.0_MK,MKC)
 	END IF
 	IF ( rZ ) THEN
-		IF( ALLOCATED(poisson_solver%rhsZ) )THEN
-			DEALLOCATE(poisson_solver%rhsZ)
+		IF( ALLOCATED(poisson_solver(ps)%rhsZ) )THEN
+			DEALLOCATE(poisson_solver(ps)%rhsZ)
 		END IF
-		ALLOCATE( poisson_solver%rhsZ(0:nrecv-1) )
-		poisson_solver%rhsZ = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%rhsZ(0:nrecv-1) )
+		poisson_solver(ps)%rhsZ = CMPLX(0.0_MK,0.0_MK,MKC)
 	END IF
 
 	IF ( lX ) THEN
-		IF( ALLOCATED(poisson_solver%lhsX) )THEN
-			DEALLOCATE(poisson_solver%lhsX)
+		IF( ALLOCATED(poisson_solver(ps)%lhsX) )THEN
+			DEALLOCATE(poisson_solver(ps)%lhsX)
 		END IF
-		ALLOCATE( poisson_solver%lhsX(0:nrecv-1) )
-		poisson_solver%lhsX = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%lhsX(0:nrecv-1) )
+		poisson_solver(ps)%lhsX = CMPLX(0.0_MK,0.0_MK,MKC)
 	END IF
 	IF ( lY ) THEN
-		IF( ALLOCATED(poisson_solver%lhsY) )THEN
-			DEALLOCATE(poisson_solver%lhsY)
+		IF( ALLOCATED(poisson_solver(ps)%lhsY) )THEN
+			DEALLOCATE(poisson_solver(ps)%lhsY)
 		END IF
-		ALLOCATE( poisson_solver%lhsY(0:nrecv-1) )
-		poisson_solver%lhsY = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%lhsY(0:nrecv-1) )
+		poisson_solver(ps)%lhsY = CMPLX(0.0_MK,0.0_MK,MKC)
 	END IF
 	IF ( lZ ) THEN
-		IF( ALLOCATED(poisson_solver%lhsZ) )THEN
-			DEALLOCATE(poisson_solver%lhsZ)
+		IF( ALLOCATED(poisson_solver(ps)%lhsZ) )THEN
+			DEALLOCATE(poisson_solver(ps)%lhsZ)
 		END IF
-		ALLOCATE( poisson_solver%lhsZ(0:nrecv-1) )
-		poisson_solver%lhsZ = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%lhsZ(0:nrecv-1) )
+		poisson_solver(ps)%lhsZ = CMPLX(0.0_MK,0.0_MK,MKC)
 	END IF
 	IF ( mG ) THEN
-		IF( ALLOCATED(poisson_solver%mapG) )THEN
-			DEALLOCATE(poisson_solver%mapG)
+		IF( ALLOCATED(poisson_solver(ps)%mapG) )THEN
+			DEALLOCATE(poisson_solver(ps)%mapG)
 		END IF
-		ALLOCATE( poisson_solver%mapG(0:nrecv-1) )
-		poisson_solver%mapG = CMPLX(0.0_MK,0.0_MK,MKC)
+		ALLOCATE( poisson_solver(ps)%mapG(0:nrecv-1) )
+		poisson_solver(ps)%mapG = CMPLX(0.0_MK,0.0_MK,MKC)
 	END IF
 
 !------------------------------------------------------------------------------!
@@ -467,38 +468,38 @@ include 'mpif.h'
 						pqs = sqn + p
 
 						IF ( rX ) THEN
-							poisson_solver%rhsX(pqs) = CMPLX( buffer_recv(i)%val(k), &
+							poisson_solver(ps)%rhsX(pqs) = CMPLX( buffer_recv(i)%val(k), &
 							                                  buffer_recv(i)%val(k+1) ,MKC)
 							k = k + 2
 						END IF
 						IF ( rY ) THEN
-							poisson_solver%rhsY(pqs) = CMPLX( buffer_recv(i)%val(k), &
+							poisson_solver(ps)%rhsY(pqs) = CMPLX( buffer_recv(i)%val(k), &
 							                                  buffer_recv(i)%val(k+1) ,MKC)
 							k = k + 2
 						END IF
 						IF ( rZ ) THEN
-							poisson_solver%rhsZ(pqs) = CMPLX( buffer_recv(i)%val(k), &
+							poisson_solver(ps)%rhsZ(pqs) = CMPLX( buffer_recv(i)%val(k), &
 							                                  buffer_recv(i)%val(k+1) ,MKC)
 							k = k + 2
 						END IF
 						IF ( lX ) THEN
-							poisson_solver%lhsX(pqs) = CMPLX( buffer_recv(i)%val(k), &
+							poisson_solver(ps)%lhsX(pqs) = CMPLX( buffer_recv(i)%val(k), &
 							                                  buffer_recv(i)%val(k+1) ,MKC)
 							k = k + 2
 						END IF
 						IF ( lY ) THEN
-							poisson_solver%lhsY(pqs) = CMPLX( buffer_recv(i)%val(k), &
+							poisson_solver(ps)%lhsY(pqs) = CMPLX( buffer_recv(i)%val(k), &
 							                                  buffer_recv(i)%val(k+1) ,MKC)
 							k = k + 2
 						END IF
 						IF ( lZ ) THEN
-							poisson_solver%lhsZ(pqs) = CMPLX( buffer_recv(i)%val(k), &
+							poisson_solver(ps)%lhsZ(pqs) = CMPLX( buffer_recv(i)%val(k), &
 							                                  buffer_recv(i)%val(k+1) ,MKC)
 							k = k + 2
 						END IF
 
 						IF ( mG ) THEN
-							poisson_solver%mapG(pqs) = CMPLX( buffer_recv(i)%val(k), &
+							poisson_solver(ps)%mapG(pqs) = CMPLX( buffer_recv(i)%val(k), &
 							                                  buffer_recv(i)%val(k+1) ,MKC)
 							k = k + 2
 						END IF

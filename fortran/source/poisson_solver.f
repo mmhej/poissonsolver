@@ -66,13 +66,12 @@ IMPLICIT NONE
 		COMPLEX(MKC), DIMENSION(:),ALLOCATABLE :: G3D
 
 		REAL(MK), DIMENSION(:),ALLOCATABLE :: zeta
-
 	END TYPE class_poisson_solver
 
 !------------------------------------------------------------------------------!
 ! Module variables
 !------------------------------------------------------------------------------!
-	TYPE(class_poisson_solver) :: poisson_solver
+	TYPE(class_poisson_solver),DIMENSION(:),ALLOCATABLE :: poisson_solver
 
 !------------------------------------------------------------------------------!
 ! Module interfaces
@@ -112,6 +111,7 @@ CONTAINS
 
 #include "poisson_solver/poisson_solver_smooth3d.f"
 
+#include "poisson_solver/poisson_solver_initialise.f"
 #include "poisson_solver/poisson_solver_finalise.f"
 
 !------------------------------------------------------------------------------!

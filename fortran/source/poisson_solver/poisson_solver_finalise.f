@@ -1,78 +1,81 @@
 !------------------------------------------------------------------------------!
 !  
-!  File:         finalise.f
+!  File:         poisson_solver_finalise.f
 !  
 !  Description:  Finalises the poisson_solver
 !  
 !------------------------------------------------------------------------------!
-SUBROUTINE poisson_solver_finalise( )
+SUBROUTINE poisson_solver_finalise( ps )
 
 
 IMPLICIT NONE
 
+!------------------------------------------------------------------------------!
+! Arguments
+!------------------------------------------------------------------------------!
+	INTEGER,  INTENT(IN) :: ps
 !	WRITE(*,*) " [poisson_solver]: Destructing Poisson solver object."
 
 !------------------------------------------------------------------------------!
 ! De-allocate arrays from memory
 !------------------------------------------------------------------------------!
-	IF ( ALLOCATED(poisson_solver%rhsX) ) THEN
-		DEALLOCATE(poisson_solver%rhsX)
+	IF ( ALLOCATED(poisson_solver(ps)%rhsX) ) THEN
+		DEALLOCATE(poisson_solver(ps)%rhsX)
 	END IF
-	IF ( ALLOCATED(poisson_solver%rhsY) ) THEN
-		DEALLOCATE(poisson_solver%rhsY)
+	IF ( ALLOCATED(poisson_solver(ps)%rhsY) ) THEN
+		DEALLOCATE(poisson_solver(ps)%rhsY)
 	END IF
-	IF ( ALLOCATED(poisson_solver%rhsZ) ) THEN
-		DEALLOCATE(poisson_solver%rhsZ)
-	END IF
-
-	IF ( ALLOCATED(poisson_solver%lhsX) ) THEN
-		DEALLOCATE(poisson_solver%lhsX)
-	END IF
-	IF ( ALLOCATED(poisson_solver%lhsY) ) THEN
-		DEALLOCATE(poisson_solver%lhsY)
-	END IF
-	IF ( ALLOCATED(poisson_solver%lhsZ) ) THEN
-		DEALLOCATE(poisson_solver%lhsZ)
+	IF ( ALLOCATED(poisson_solver(ps)%rhsZ) ) THEN
+		DEALLOCATE(poisson_solver(ps)%rhsZ)
 	END IF
 
-	IF ( ALLOCATED(poisson_solver%ikX) ) THEN
-		DEALLOCATE(poisson_solver%ikX)
+	IF ( ALLOCATED(poisson_solver(ps)%lhsX) ) THEN
+		DEALLOCATE(poisson_solver(ps)%lhsX)
 	END IF
-	IF ( ALLOCATED(poisson_solver%ikY) ) THEN
-		DEALLOCATE(poisson_solver%ikY)
+	IF ( ALLOCATED(poisson_solver(ps)%lhsY) ) THEN
+		DEALLOCATE(poisson_solver(ps)%lhsY)
 	END IF
-	IF ( ALLOCATED(poisson_solver%ikZ) ) THEN
-		DEALLOCATE(poisson_solver%ikZ)
-	END IF
-
-	IF ( ALLOCATED(poisson_solver%zeta) ) THEN
-		DEALLOCATE(poisson_solver%zeta)
+	IF ( ALLOCATED(poisson_solver(ps)%lhsZ) ) THEN
+		DEALLOCATE(poisson_solver(ps)%lhsZ)
 	END IF
 
-	IF ( ALLOCATED(poisson_solver%mapG) ) THEN
-		DEALLOCATE(poisson_solver%mapG)
+	IF ( ALLOCATED(poisson_solver(ps)%ikX) ) THEN
+		DEALLOCATE(poisson_solver(ps)%ikX)
+	END IF
+	IF ( ALLOCATED(poisson_solver(ps)%ikY) ) THEN
+		DEALLOCATE(poisson_solver(ps)%ikY)
+	END IF
+	IF ( ALLOCATED(poisson_solver(ps)%ikZ) ) THEN
+		DEALLOCATE(poisson_solver(ps)%ikZ)
 	END IF
 
-	IF ( ALLOCATED(poisson_solver%G2D) ) THEN
-		DEALLOCATE(poisson_solver%G2D)
-	END IF
-	IF ( ALLOCATED(poisson_solver%G3D) ) THEN
-		DEALLOCATE(poisson_solver%G3D)
+	IF ( ALLOCATED(poisson_solver(ps)%zeta) ) THEN
+		DEALLOCATE(poisson_solver(ps)%zeta)
 	END IF
 
-	IF ( ALLOCATED(poisson_solver%partition) ) THEN
-		DEALLOCATE(poisson_solver%partition)
-	END IF
-	IF ( ALLOCATED(poisson_solver%xpen) ) THEN
-		DEALLOCATE(poisson_solver%xpen)
-	END IF
-	IF ( ALLOCATED(poisson_solver%ypen) ) THEN
-		DEALLOCATE(poisson_solver%ypen)
-	END IF
-	IF ( ALLOCATED(poisson_solver%zpen) ) THEN
-		DEALLOCATE(poisson_solver%zpen)
+	IF ( ALLOCATED(poisson_solver(ps)%mapG) ) THEN
+		DEALLOCATE(poisson_solver(ps)%mapG)
 	END IF
 
+	IF ( ALLOCATED(poisson_solver(ps)%G2D) ) THEN
+		DEALLOCATE(poisson_solver(ps)%G2D)
+	END IF
+	IF ( ALLOCATED(poisson_solver(ps)%G3D) ) THEN
+		DEALLOCATE(poisson_solver(ps)%G3D)
+	END IF
+
+	IF ( ALLOCATED(poisson_solver(ps)%partition) ) THEN
+		DEALLOCATE(poisson_solver(ps)%partition)
+	END IF
+	IF ( ALLOCATED(poisson_solver(ps)%xpen) ) THEN
+		DEALLOCATE(poisson_solver(ps)%xpen)
+	END IF
+	IF ( ALLOCATED(poisson_solver(ps)%ypen) ) THEN
+		DEALLOCATE(poisson_solver(ps)%ypen)
+	END IF
+	IF ( ALLOCATED(poisson_solver(ps)%zpen) ) THEN
+		DEALLOCATE(poisson_solver(ps)%zpen)
+	END IF
 
 !------------------------------------------------------------------------------!
 ! Return
