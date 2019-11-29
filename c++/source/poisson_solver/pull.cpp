@@ -6,9 +6,9 @@
 */
 //----------------------------------------------------------------------------//
 
-void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
-                           double * real_rhsZ, double * real_lhsX,
-                           double * real_lhsY, double * real_lhsZ )
+void poisson_solver::pull( double * real_lhsX, double * real_lhsY,
+                           double * real_lhsZ, double * real_rhsX,
+                           double * real_rhsY, double * real_rhsZ )
 {
 
 //----------------------------------------------------------------------------//
@@ -48,13 +48,13 @@ void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
 // Find out which fields to map
 //----------------------------------------------------------------------------//
 	nmap = 0;
-	if( real_rhsX != NULL && rhsX != NULL ){ rX = true; nmap += 1; }
-	if( real_rhsY != NULL && rhsY != NULL ){ rY = true; nmap += 1; }
-	if( real_rhsZ != NULL && rhsZ != NULL ){ rZ = true; nmap += 1; }
-
 	if( real_lhsX != NULL && lhsX != NULL ){ lX = true; nmap += 1; }
 	if( real_lhsY != NULL && lhsY != NULL ){ lY = true; nmap += 1; }
 	if( real_lhsZ != NULL && lhsZ != NULL ){ lZ = true; nmap += 1; }
+
+	if( real_rhsX != NULL && rhsX != NULL ){ rX = true; nmap += 1; }
+	if( real_rhsY != NULL && rhsY != NULL ){ rY = true; nmap += 1; }
+	if( real_rhsZ != NULL && rhsZ != NULL ){ rZ = true; nmap += 1; }
 
 //----------------------------------------------------------------------------//
 // Allocate and pack communication buffers
@@ -98,22 +98,6 @@ void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
 					{
 						pqs = sqn + p;
 
-						if( rX )
-						{
-							buffer_recv[i][k] = std::real(rhsX[pqs]);
-							++k;
-						}
-						if( rY )
-						{
-							buffer_recv[i][k] = std::real(rhsY[pqs]);
-							++k;
-						}
-						if( rZ )
-						{
-							buffer_recv[i][k] = std::real(rhsZ[pqs]);
-							++k;
-						}
-
 						if( lX )
 						{
 							buffer_recv[i][k] = std::real(lhsX[pqs]);
@@ -127,6 +111,22 @@ void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
 						if( lZ )
 						{
 							buffer_recv[i][k] = std::real(lhsZ[pqs]);
+							++k;
+						}
+
+						if( rX )
+						{
+							buffer_recv[i][k] = std::real(rhsX[pqs]);
+							++k;
+						}
+						if( rY )
+						{
+							buffer_recv[i][k] = std::real(rhsY[pqs]);
+							++k;
+						}
+						if( rZ )
+						{
+							buffer_recv[i][k] = std::real(rhsZ[pqs]);
 							++k;
 						}
 
@@ -208,21 +208,6 @@ void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
 						{
 							pqs = sqn + p;
 
-							if( rX )
-							{
-								buffer_send[k] = std::real(rhsX[pqs]);
-								++k;
-							}
-							if( rY )
-							{
-								buffer_send[k] = std::real(rhsY[pqs]);
-								++k;
-							}
-							if( rZ )
-							{
-								buffer_send[k] = std::real(rhsZ[pqs]);
-								++k;
-							}
 							if( lX )
 							{
 								buffer_send[k] = std::real(lhsX[pqs]);
@@ -236,6 +221,22 @@ void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
 							if( lZ )
 							{
 								buffer_send[k] = std::real(lhsZ[pqs]);
+								++k;
+							}
+
+							if( rX )
+							{
+								buffer_send[k] = std::real(rhsX[pqs]);
+								++k;
+							}
+							if( rY )
+							{
+								buffer_send[k] = std::real(rhsY[pqs]);
+								++k;
+							}
+							if( rZ )
+							{
+								buffer_send[k] = std::real(rhsZ[pqs]);
 								++k;
 							}
 
@@ -409,21 +410,6 @@ void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
 					{
 						pqs = sqn + p;
 
-						if( rX )
-						{
-							real_rhsX[pqs] = buffer_recv[i][k];
-							++k;
-						}
-						if( rY )
-						{
-							real_rhsY[pqs] = buffer_recv[i][k];
-							++k;
-						}
-						if( rZ )
-						{
-							real_rhsZ[pqs] = buffer_recv[i][k];
-							++k;
-						}
 						if( lX )
 						{
 							real_lhsX[pqs] = buffer_recv[i][k];
@@ -437,6 +423,22 @@ void poisson_solver::pull( double * real_rhsX, double * real_rhsY,
 						if( lZ )
 						{
 							real_lhsZ[pqs] = buffer_recv[i][k];
+							++k;
+						}
+
+						if( rX )
+						{
+							real_rhsX[pqs] = buffer_recv[i][k];
+							++k;
+						}
+						if( rY )
+						{
+							real_rhsY[pqs] = buffer_recv[i][k];
+							++k;
+						}
+						if( rZ )
+						{
+							real_rhsZ[pqs] = buffer_recv[i][k];
 							++k;
 						}
 

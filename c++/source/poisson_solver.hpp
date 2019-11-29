@@ -119,7 +119,7 @@ class poisson_solver
 		void solve3d(  );
 
 		void push( double *, double *, double * );
-		void pull( double *, double *, double *, double *, double *, double * );
+		void pull( double *, double *, double *, double * = NULL, double * = NULL, double * = NULL );
 
 };
 

@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	poisson.pull( Bx, By, Bz, Ax, Ay, Az );
+	poisson.pull( Ax, Ay, Az, Bx, By, Bz );
 
 //----------------------------------------------------------------------------//
 // Calculate error integral

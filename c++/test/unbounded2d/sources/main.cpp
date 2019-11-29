@@ -204,8 +204,8 @@ int main(int argc, char* argv[])
 	if(rank == 0){ std::cout << " [poisson_solver]: Pull" << std::endl; }
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-	poisson.pull( Bx, NULL, NULL, Ax, Ay, NULL );
+	poisson.pull( Ax, Ay, NULL );
+//	poisson.pull( Ax, Ay, NULL, Bx, NULL, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error integral

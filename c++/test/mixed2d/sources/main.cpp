@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-	poisson.pull( Bx, NULL, NULL, Ax, Ay, NULL );
+	poisson.pull( Ax, Ay, NULL, Bx, NULL, NULL );
 
 //----------------------------------------------------------------------------//
 // Calculate error
